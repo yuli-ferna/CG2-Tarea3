@@ -274,6 +274,7 @@ void render()
 
 	//tweakbar
 	TwDraw();
+
     // Swap the buffer
     glfwSwapBuffers(window);
 }
