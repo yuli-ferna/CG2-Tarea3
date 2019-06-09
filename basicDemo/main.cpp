@@ -1,11 +1,16 @@
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <iostream>
 #include <stb_image.h>
 #include "userInterface.h"
+#include "model.h"
 
 #include "Shader.h"
+#include <vector>
+#include <time.h>
 
 // Window current width
 unsigned int windowWidth = 800;
@@ -19,14 +24,17 @@ GLFWwindow *window;
 // Shader object
 Shader *shader;
 // Index (GPU) of the geometry buffer
-unsigned int VBO;
+unsigned int VBO[2];
 // Index (GPU) vertex array object
-unsigned int VAO;
+unsigned int VAO[2];
 // Index (GPU) of the texture
 unsigned int textureID;
 
 //tweakBar
 userInterface *Interface;
+
+//Models
+std::vector< model > modelsObj;
 /**
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -124,36 +132,76 @@ void initGL()
  * */
 void buildGeometry()
 {
-    float triangleVertices[] = {
-        // Bottom left vertex
-        -0.5f, -0.5f, 0.0f, // Position
-        1.0f, 0.0f, 0.0f,   // Color
-        // Bottom right vertex
-        0.5f, -0.5f, 0.0f, // Position
-        0.0f, 1.0f, 0.0f,  // Color
-        // Top Center vertex
-        0.0f, 0.5f, 0.0f, // Position
-        0.0f, 0.0f, 1.0f  // Color
+	float triangleVertices[] =
+	{
+		-0.5f, -0.5f, 0.0f,
+		 0.0f, 0.0f, 0.5f,  // Color
+		-0.5f,  0.5f, 0.0f,
+		 0.0f, 0.0f, 0.5f,  // Color
+		 0.5f,  0.5f, 0.0f,
+		 0.0f, 0.0f, 0.5f,  // Color
+		 0.5f, -0.5f, 0.0f,
+		 0.0f, 0.0f, 0.5f,  // Color
+		-0.5f, -0.5f, 0.0f,
+		 0.0f, 0.0f, 0.5f   // Color
+	};
+	static const float vertex[] =
+	{
+		 1.0f, -1.0f, -1.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 1.0f,
+		-1.0f, -1.0f,  1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f, 1.0f,
+		 1.0f,  1.0f, -1.0f, 1.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f,
+		-1.0f,  1.0f,  1.0f, 1.0f,
+		-1.0f,  1.0f, -1.0f, 1.0f
+	};
+	model object;
+	/*for (size_t i = 0; i < 8; i++)
+	{
+		object.vertex.push_back(glm::vec4(vertex[(i*4)], vertex[(i*4)+1], vertex[(i*4)+2], vertex[(i*4)+3]));
+		printf("%f %f %f %f\n", vertex[i * 4], vertex[(i * 4) + 1], vertex[(i * 4) + 2], vertex[(i * 4) + 3]);
+	}*/
+	glm::mat4 model = glm::rotate(model, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-    };
+	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+	glm::mat4 MVP = proj * view * model;
+	object.vertex.push_back(glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
+	object.vertex.push_back(glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
+	object.vertex.push_back(glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+
+	object.color.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+
     // Creates on GPU the vertex array
-    glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO[0]);
     // Creates on GPU the vertex buffer object
-    glGenBuffers(1, &VBO);
+    glGenBuffers(2, VBO);
     // Binds the vertex array to set all the its properties
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAO[0]);
     // Sets the buffer geometry data
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), &triangleVertices, GL_STATIC_DRAW);
-
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+	//vexter position VBO
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
     // Sets the vertex attributes
-    // Position
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-    // Color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+	//vertex position position VAO
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	//color position VBO
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(1);
+	//color position VAO
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, NULL);
     glBindVertexArray(0);
+
+	modelsObj.push_back(object);
 }
 /**
  * Loads a texture into the GPU
@@ -226,6 +274,7 @@ bool init()
 
     // Loads the shader
     shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+	
     // Loads all the geometry into the GPU
     buildGeometry();
     // Loads the texture into the GPU
@@ -262,11 +311,23 @@ void render()
     // Clears the color and depth buffers from the frame buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glm::mat4 model = glm::rotate(model, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+
+
+	glm::mat4 view = glm::lookAt(
+		glm::vec3(0.5f, 0.5f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+	glm::mat4 MVP = model;
     /** Draws code goes here **/
     // Use the shader
     shader->use();
     // Binds the vertex array to be drawn
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAO[0]);
+	shader->setMat4("MVP", MVP);
     // Renders the triangle gemotry
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
@@ -297,6 +358,9 @@ void update()
         glfwPollEvents();
     }
 }
+
+
+
 /**
  * App starting point
  * @param{int} number of arguments
@@ -323,9 +387,9 @@ int main(int argc, char const *argv[])
     // Deletes the texture from the gpu
     glDeleteTextures(1, &textureID);
     // Deletes the vertex array from the GPU
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &VAO[0]);
     // Deletes the vertex object from the GPU
-    glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, VBO);
     // Destroy the shader
     delete shader;
 	delete Interface;
