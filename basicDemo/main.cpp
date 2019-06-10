@@ -4,13 +4,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+
 #include <stb_image.h>
 #include "userInterface.h"
 #include "model.h"
 
 #include "Shader.h"
 #include <vector>
-#include <time.h>
 
 // Window current width
 unsigned int windowWidth = 800;
@@ -125,6 +129,102 @@ void initGL()
     // Sets the clear color
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
+
+void loadObj(std::string path)
+{
+	std::ifstream file = std::ifstream(path);
+    if (!file.is_open()) {
+		std::cout << "No se ecuentra: " << path << std::endl;
+    }
+
+	std::vector< glm::vec3 > allVert;
+	std::vector< glm::vec3 > allNormal;
+	std::vector< glm::vec2 > allUV;
+	std::vector< unsigned int > vertInd, normInd, uvInd;
+	//int count = 0;
+    while (file) {
+        std::string token, first, trash;
+		float vx, vy, vz;
+        getline(file, token);
+		std::istringstream str(token);
+		str >> first;
+        std::cout << " " << first << std::endl;
+		//Vertex position
+		if (first == "v")
+		{
+			str >> vx >> vy >> vz;
+			allVert.push_back(glm::vec3(vx, vy, vz));
+
+		}
+		//Coordenadas uv
+		else if (first == "vt")
+		{
+			str >> vx >> vy;
+			allUV.push_back(glm::vec2(vx, vy));
+
+		}
+		//Normal
+		else if (first == "vn")
+		{
+			str >> vx >> vy >> vz;
+			allNormal.push_back(glm::vec3(vx, vy, vz));
+
+		}
+		//faces
+		else if (first == "f")
+		{
+			unsigned int vertIndex[3], uvIndex[3], normalIndex[3];
+			std::replace_if(std::begin(token), std::end(token), [](const char& ch) { return ch == '/'; }, ' ');
+
+			std::istringstream face_str(token);
+			face_str.ignore(token.length(), ' ');
+
+			face_str >> vertIndex[0] >> uvIndex[0] >> normalIndex[0] 
+				>> vertIndex[1] >> uvIndex[1] >> normalIndex[1] 
+				>> vertIndex[2] >> uvIndex[2] >> normalIndex[2];
+
+			//Se le resta 1 porque el index de los vertices en el obj empieza en 1
+			vertInd.push_back(vertIndex[0] - 1);
+			vertInd.push_back(vertIndex[1] - 1);
+			vertInd.push_back(vertIndex[2] - 1);
+
+			uvInd.push_back(uvIndex[0] - 1);
+			uvInd.push_back(uvIndex[1] - 1);
+			uvInd.push_back(uvIndex[2] - 1);
+
+			normInd.push_back(normalIndex[0] - 1);
+			normInd.push_back(normalIndex[1] - 1);
+			normInd.push_back(normalIndex[2] - 1);
+		}
+		else if (first == "usmtl")
+		{
+			//img
+		}
+		else if (first == "mtllib")
+		{
+			//mtl
+		}
+		else if (first == "s")
+		{
+
+		}
+
+    }
+	
+	
+	//Creando el arreglo final
+	std::vector< glm::vec3 > Vert;
+	std::vector< glm::vec3 > Normal;
+	std::vector< glm::vec2 > UV;
+	for (int i = 0; i < vertInd.size(); i++)
+	{
+		Vert.push_back(allVert[vertInd[i]]);
+		UV.push_back(allUV[uvInd[i]]);
+		Normal.push_back(allNormal[normInd[i]]);
+	}
+
+}
+
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
@@ -157,18 +257,15 @@ void buildGeometry()
 		-1.0f,  1.0f, -1.0f, 1.0f
 	};
 	model object;
-	/*for (size_t i = 0; i < 8; i++)
-	{
-		object.vertex.push_back(glm::vec4(vertex[(i*4)], vertex[(i*4)+1], vertex[(i*4)+2], vertex[(i*4)+3]));
-		printf("%f %f %f %f\n", vertex[i * 4], vertex[(i * 4) + 1], vertex[(i * 4) + 2], vertex[(i * 4) + 3]);
-	}*/
-	glm::mat4 model = glm::rotate(model, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	
+	loadObj(".\\assets\\models\\cube2.obj");
+	glm::mat4 model1 = glm::rotate(model1, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 
 	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::mat4 MVP = proj * view * model;
+	glm::mat4 MVP = proj * view * model1;
 	object.vertex.push_back(glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
 	object.vertex.push_back(glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
 	object.vertex.push_back(glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
@@ -310,24 +407,20 @@ void render()
 {
     // Clears the color and depth buffers from the frame buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+/*
 	glm::mat4 model = glm::rotate(model, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-
-	glm::mat4 view = glm::lookAt(
-		glm::vec3(0.5f, 0.5f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::mat4 MVP = model;
+	glm::mat4 MVP = model;*/
     /** Draws code goes here **/
     // Use the shader
-    shader->use();
+    shader->use();/*
+	shader->setMat4("MVP", MVP);*/
     // Binds the vertex array to be drawn
     glBindVertexArray(VAO[0]);
-	shader->setMat4("MVP", MVP);
     // Renders the triangle gemotry
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
@@ -358,7 +451,6 @@ void update()
         glfwPollEvents();
     }
 }
-
 
 
 /**
