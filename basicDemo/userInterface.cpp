@@ -27,7 +27,7 @@ userInterface::userInterface()
 	TwDefine("Obj refresh = '0.0001f'");
 	TwDefine("Obj resizable = false");
 	TwDefine("Obj fontresizable = false");
-	TwDefine("Obj movable = false");
+	TwDefine("Obj movable = true");
 	TwDefine("Obj visible = true");
 	TwDefine("Obj position = '10 10'");
 	TwDefine("Obj size = '250 200'");

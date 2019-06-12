@@ -16,6 +16,7 @@
 #include "Shader.h"
 #include <vector>
 
+#define px(x) x  
 // Window current width
 unsigned int windowWidth = 800;
 // Window current height
@@ -53,6 +54,39 @@ void resize(GLFWwindow *window, int width, int height)
     glViewport(0, 0, windowWidth, windowHeight);
 	Interface->reshape();
 
+}
+
+/**
+ * Calback the window resize
+ * @param{GLFWwindow} window pointer
+ * @param{int} new width of the window
+ * @param{int} new height of the window
+ * */
+void onResizeWindow(GLFWwindow* window, int width, int height) {
+	TwWindowSize(width, height);
+}
+
+/**
+ * Calback key press
+ * */
+void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS) TwKeyPressed(key, TW_KMOD_NONE);
+}
+
+void onMouseButton(GLFWwindow* window, int button, int action, int mods)
+{
+	auto a = action == GLFW_PRESS ? TW_MOUSE_PRESSED : TW_MOUSE_RELEASED;
+	auto b = TW_MOUSE_LEFT;
+
+	TwMouseButton(a, b);
+}
+
+void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
+{
+	TwMouseMotion(px(static_cast<int>(xpos)), px(static_cast<int>(ypos)));
+}
+void onCharacter(GLFWwindow* window, unsigned int codepoint) {
+	TwKeyPressed(codepoint, TW_KMOD_NONE);
 }
 /**
  * initialize the user interface
@@ -96,8 +130,15 @@ bool initWindow()
     glfwMakeContextCurrent(window);
 	
     // Window resize callback
-    glfwSetFramebufferSizeCallback(window, resize);
-    return true;
+	glfwSetFramebufferSizeCallback(window, resize);
+
+	glfwSetCursorPosCallback(window, onMouseMotion);
+	glfwSetMouseButtonCallback(window, onMouseButton);
+	glfwSetKeyCallback(window, onKeyPress);
+	glfwSetCharCallback(window, onCharacter);
+	glfwSetWindowSizeCallback(window, onResizeWindow);
+	
+	return true;
 }
 
 /**
@@ -407,18 +448,19 @@ void render()
 {
     // Clears the color and depth buffers from the frame buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-/*
-	glm::mat4 model = glm::rotate(model, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+    /** Draws code goes here **/
+    // Use the shader
+    shader->use();
+
+	glm::mat4 trans = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+	trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
 
 	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::mat4 MVP = model;*/
-    /** Draws code goes here **/
-    // Use the shader
-    shader->use();/*
-	shader->setMat4("MVP", MVP);*/
+	glm::mat4 MVP = (proj * view * trans);
+	shader->setMat4("MVP", MVP);
     // Binds the vertex array to be drawn
     glBindVertexArray(VAO[0]);
     // Renders the triangle gemotry
