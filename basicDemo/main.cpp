@@ -29,9 +29,9 @@ GLFWwindow *window;
 // Shader object
 Shader *shader;
 // Index (GPU) of the geometry buffer
-unsigned int VBO[2];
+unsigned int VBO[3];
 // Index (GPU) vertex array object
-unsigned int VAO[2];
+unsigned int VAO[3];
 // Index (GPU) of the texture
 unsigned int textureID;
 
@@ -71,6 +71,7 @@ void onResizeWindow(GLFWwindow* window, int width, int height) {
  * */
 void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) TwKeyPressed(key, TW_KMOD_NONE);
+
 }
 
 void onMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -171,101 +172,6 @@ void initGL()
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
 
-void loadObj(std::string path)
-{
-	std::ifstream file = std::ifstream(path);
-    if (!file.is_open()) {
-		std::cout << "No se ecuentra: " << path << std::endl;
-    }
-
-	std::vector< glm::vec3 > allVert;
-	std::vector< glm::vec3 > allNormal;
-	std::vector< glm::vec2 > allUV;
-	std::vector< unsigned int > vertInd, normInd, uvInd;
-	//int count = 0;
-    while (file) {
-        std::string token, first, trash;
-		float vx, vy, vz;
-        getline(file, token);
-		std::istringstream str(token);
-		str >> first;
-        std::cout << " " << first << std::endl;
-		//Vertex position
-		if (first == "v")
-		{
-			str >> vx >> vy >> vz;
-			allVert.push_back(glm::vec3(vx, vy, vz));
-
-		}
-		//Coordenadas uv
-		else if (first == "vt")
-		{
-			str >> vx >> vy;
-			allUV.push_back(glm::vec2(vx, vy));
-
-		}
-		//Normal
-		else if (first == "vn")
-		{
-			str >> vx >> vy >> vz;
-			allNormal.push_back(glm::vec3(vx, vy, vz));
-
-		}
-		//faces
-		else if (first == "f")
-		{
-			unsigned int vertIndex[3], uvIndex[3], normalIndex[3];
-			std::replace_if(std::begin(token), std::end(token), [](const char& ch) { return ch == '/'; }, ' ');
-
-			std::istringstream face_str(token);
-			face_str.ignore(token.length(), ' ');
-
-			face_str >> vertIndex[0] >> uvIndex[0] >> normalIndex[0] 
-				>> vertIndex[1] >> uvIndex[1] >> normalIndex[1] 
-				>> vertIndex[2] >> uvIndex[2] >> normalIndex[2];
-
-			//Se le resta 1 porque el index de los vertices en el obj empieza en 1
-			vertInd.push_back(vertIndex[0] - 1);
-			vertInd.push_back(vertIndex[1] - 1);
-			vertInd.push_back(vertIndex[2] - 1);
-
-			uvInd.push_back(uvIndex[0] - 1);
-			uvInd.push_back(uvIndex[1] - 1);
-			uvInd.push_back(uvIndex[2] - 1);
-
-			normInd.push_back(normalIndex[0] - 1);
-			normInd.push_back(normalIndex[1] - 1);
-			normInd.push_back(normalIndex[2] - 1);
-		}
-		else if (first == "usmtl")
-		{
-			//img
-		}
-		else if (first == "mtllib")
-		{
-			//mtl
-		}
-		else if (first == "s")
-		{
-
-		}
-
-    }
-	
-	
-	//Creando el arreglo final
-	std::vector< glm::vec3 > Vert;
-	std::vector< glm::vec3 > Normal;
-	std::vector< glm::vec2 > UV;
-	for (int i = 0; i < vertInd.size(); i++)
-	{
-		Vert.push_back(allVert[vertInd[i]]);
-		UV.push_back(allUV[uvInd[i]]);
-		Normal.push_back(allNormal[normInd[i]]);
-	}
-
-}
-
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
@@ -299,45 +205,57 @@ void buildGeometry()
 	};
 	model object;
 	
-	loadObj(".\\assets\\models\\cube2.obj");
-	glm::mat4 model1 = glm::rotate(model1, 45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	object = object.loadObj(".\\assets\\models\\cube2.obj");
 
-	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	//object.vertex.push_back(glm::vec3(0.5f, -0.5f, 0.0f));
+	//object.vertex.push_back(glm::vec3(-0.5f, -0.5f, 0.0f));
+	//object.vertex.push_back(glm::vec3(0.5f, 0.5f, 0.0f));
 
-	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+	//object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	//object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	//object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::mat4 MVP = proj * view * model1;
-	object.vertex.push_back(glm::vec4(0.5f, -0.5f, 0.0f, 1.0f));
-	object.vertex.push_back(glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f));
-	object.vertex.push_back(glm::vec4(0.5f, 0.5f, 0.0f, 1.0f));
+	//object.uv.push_back(glm::vec2(0.0f, 0.0f));
+	//object.uv.push_back(glm::vec2(0.5f, 1.0f));
+	//object.uv.push_back(glm::vec2(1.0f, 0.0f));
 
-	object.color.push_back(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-
-    // Creates on GPU the vertex array
+	// Creates on GPU the vertex array
     glGenVertexArrays(1, &VAO[0]);
     // Creates on GPU the vertex buffer object
-    glGenBuffers(2, VBO);
+    glGenBuffers(3, VBO);
     // Binds the vertex array to set all the its properties
     glBindVertexArray(VAO[0]);
+
+	//vexter position VBO
     // Sets the buffer geometry data
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-	//vexter position VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
+	//vertex position position VAO
     // Sets the vertex attributes
     glEnableVertexAttribArray(0);
-	//vertex position position VAO
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
+	//color VBO
+	// Sets the buffer geometry data
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	//color position VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
 
+	//color VAO
+	// Sets the vertex attributes
 	glEnableVertexAttribArray(1);
-	//color position VAO
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glBindVertexArray(0);
+
+	//uv VBO
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
+
+	//uv VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(0);
 
 	modelsObj.push_back(object);
 }
@@ -452,19 +370,27 @@ void render()
     // Use the shader
     shader->use();
 
-	glm::mat4 trans = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-	trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+	//MVP trnasformations
+	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+	model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
 
 	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::mat4 MVP = (proj * view * trans);
+	glm::mat4 MVP = (model);
 	shader->setMat4("MVP", MVP);
-    // Binds the vertex array to be drawn
+
+	//Texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	shader->setInt("text", 0);
+    
+	// Binds the vertex array to be drawn
     glBindVertexArray(VAO[0]);
-    // Renders the triangle gemotry
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    
+	// Renders the triangle gemotry
+    glDrawArrays(GL_TRIANGLES, 0, modelsObj[0].vertex.size());
     glBindVertexArray(0);
 
 
@@ -521,7 +447,7 @@ int main(int argc, char const *argv[])
     // Deletes the texture from the gpu
     glDeleteTextures(1, &textureID);
     // Deletes the vertex array from the GPU
-    glDeleteVertexArrays(1, &VAO[0]);
+    glDeleteVertexArrays(1, VAO);
     // Deletes the vertex object from the GPU
 	glDeleteBuffers(1, VBO);
     // Destroy the shader

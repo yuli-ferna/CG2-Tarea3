@@ -31,6 +31,7 @@ userInterface::userInterface()
 	TwDefine("Obj visible = true");
 	TwDefine("Obj position = '10 10'");
 	TwDefine("Obj size = '250 200'");
+	TwDefine("Obj color='143 66 244'");
 
 	TwAddSeparator(mUserInterface, "sep1", NULL);
 
