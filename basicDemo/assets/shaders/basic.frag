@@ -10,6 +10,6 @@ out vec4 color;
 
 void main()
 {
-    color = texture2D(text, texCoord);
-
+    // color = texture2D(text, texCoord);
+    color = vColor;
 }

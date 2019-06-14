@@ -31,7 +31,7 @@ Shader *shader;
 // Index (GPU) of the geometry buffer
 unsigned int VBO[3];
 // Index (GPU) vertex array object
-unsigned int VAO[3];
+unsigned int VAO[1];
 // Index (GPU) of the texture
 unsigned int textureID;
 
@@ -206,23 +206,23 @@ void buildGeometry()
 	model object;
 	
 	object = object.loadObj(".\\assets\\models\\cube2.obj");
+/*
+	object.vertex.push_back(glm::vec3(0.5f, -0.5f, 0.0f));
+	object.vertex.push_back(glm::vec3(-0.5f, -0.5f, 0.0f));
+	object.vertex.push_back(glm::vec3(0.5f, 0.5f, 0.0f));
+	*/
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 
-	//object.vertex.push_back(glm::vec3(0.5f, -0.5f, 0.0f));
-	//object.vertex.push_back(glm::vec3(-0.5f, -0.5f, 0.0f));
-	//object.vertex.push_back(glm::vec3(0.5f, 0.5f, 0.0f));
-
-	//object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	//object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	//object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-
-	//object.uv.push_back(glm::vec2(0.0f, 0.0f));
-	//object.uv.push_back(glm::vec2(0.5f, 1.0f));
-	//object.uv.push_back(glm::vec2(1.0f, 0.0f));
+	/*object.uv.push_back(glm::vec2(0.0f, 0.0f));
+	object.uv.push_back(glm::vec2(0.5f, 1.0f));
+	object.uv.push_back(glm::vec2(1.0f, 0.0f));*/
 
 	// Creates on GPU the vertex array
     glGenVertexArrays(1, &VAO[0]);
     // Creates on GPU the vertex buffer object
-    glGenBuffers(3, VBO);
+    glGenBuffers(3,VBO);
     // Binds the vertex array to set all the its properties
     glBindVertexArray(VAO[0]);
 
@@ -235,27 +235,27 @@ void buildGeometry()
     glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
-	//color VBO
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
-
-	//color VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glBindVertexArray(0);
-
 	//uv VBO
 	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
 
 	//uv VAO
 	// Sets the vertex attributes
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(1);
+	//color VBO
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
+
+	//color VAO
+	// Sets the vertex attributes
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glBindVertexArray(0);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glBindVertexArray(2);
+
 
 	modelsObj.push_back(object);
 }
@@ -373,12 +373,12 @@ void render()
 	//MVP trnasformations
 	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
 	model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
-
-	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	model = glm::mat4(1.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::mat4 MVP = (model);
+	glm::mat4 MVP = (proj * view * model);
 	shader->setMat4("MVP", MVP);
 
 	//Texture
@@ -447,9 +447,11 @@ int main(int argc, char const *argv[])
     // Deletes the texture from the gpu
     glDeleteTextures(1, &textureID);
     // Deletes the vertex array from the GPU
-    glDeleteVertexArrays(1, VAO);
+    glDeleteVertexArrays(1, &VAO[0]);
     // Deletes the vertex object from the GPU
-	glDeleteBuffers(1, VBO);
+	glDeleteBuffers(1, &VBO[0]);
+	glDeleteBuffers(1, &VBO[1]);
+	glDeleteBuffers(1, &VBO[2]);
     // Destroy the shader
     delete shader;
 	delete Interface;
