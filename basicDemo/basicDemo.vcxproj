@@ -139,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="userInterface.h" />

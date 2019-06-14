@@ -2,6 +2,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm\gtx\euler_angles.hpp> // glm::yawPitchRoll
 
 #include <iostream>
 #include <string>
@@ -15,6 +17,7 @@
 
 #include "Shader.h"
 #include <vector>
+#include "main.h"
 
 #define px(x) x  
 // Window current width
@@ -25,7 +28,6 @@ unsigned int windowHeight = 600;
 const char *windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow *window;
-
 // Shader object
 Shader *shader;
 // Index (GPU) of the geometry buffer
@@ -34,6 +36,32 @@ unsigned int VBO[3];
 unsigned int VAO[1];
 // Index (GPU) of the texture
 unsigned int textureID;
+
+//MVP Matrix
+glm::mat4 Model;
+glm::mat4 View;
+glm::mat4 Proj;
+
+//Camera
+bool cameraMode = false;
+float speed = 0.05f;
+float speedMouse = 0.05f;
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.5f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+GLfloat yaw;
+GLfloat pitch;
+
+// position
+glm::vec3 position = glm::vec3(0, 0, 5);
+// horizontal angle : toward -Z
+float horizontalAngle = 3.14f;
+// vertical angle : 0, look at the horizon
+float verticalAngle = 0.0f;
+// Initial Field of View
+float initialFoV = 45.0f;
+
 
 //tweakBar
 userInterface *Interface;
@@ -82,9 +110,19 @@ void onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	TwMouseButton(a, b);
 }
 
-void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
+void onMouseMotion(GLFWwindow* window, double xpos, double ypos) 
 {
 	TwMouseMotion(px(static_cast<int>(xpos)), px(static_cast<int>(ypos)));
+	if (cameraMode) {
+
+		glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
+
+		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse;
+		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse;
+
+		yaw += xoffset;
+		pitch += yoffset;
+	}
 }
 void onCharacter(GLFWwindow* window, unsigned int codepoint) {
 	TwKeyPressed(codepoint, TW_KMOD_NONE);
@@ -172,6 +210,17 @@ void initGL()
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
 
+/*
+** Init MVP Matrix 
+*/
+
+void initMVP() 
+{
+	Model = glm::mat4(1.0f);
+	View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+}
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
@@ -179,78 +228,9 @@ void initGL()
  * */
 void buildGeometry()
 {
-	float triangleVertices[] =
-	{
-		-0.5f, -0.5f, 0.0f,
-		 0.0f, 0.0f, 0.5f,  // Color
-		-0.5f,  0.5f, 0.0f,
-		 0.0f, 0.0f, 0.5f,  // Color
-		 0.5f,  0.5f, 0.0f,
-		 0.0f, 0.0f, 0.5f,  // Color
-		 0.5f, -0.5f, 0.0f,
-		 0.0f, 0.0f, 0.5f,  // Color
-		-0.5f, -0.5f, 0.0f,
-		 0.0f, 0.0f, 0.5f   // Color
-	};
-	static const float vertex[] =
-	{
-		 1.0f, -1.0f, -1.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 1.0f,
-		-1.0f, -1.0f,  1.0f, 1.0f,
-		-1.0f, -1.0f, -1.0f, 1.0f,
-		 1.0f,  1.0f, -1.0f, 1.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f,
-		-1.0f,  1.0f,  1.0f, 1.0f,
-		-1.0f,  1.0f, -1.0f, 1.0f
-	};
 	model object;
 	
 	object = object.loadObj(".\\assets\\models\\cube2.obj");
-/*
-	object.vertex.push_back(glm::vec3(0.5f, -0.5f, 0.0f));
-	object.vertex.push_back(glm::vec3(-0.5f, -0.5f, 0.0f));
-	object.vertex.push_back(glm::vec3(0.5f, 0.5f, 0.0f));
-	*/
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); 
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); 
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
-	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
-
-	/*object.uv.push_back(glm::vec2(0.0f, 0.0f));
-	object.uv.push_back(glm::vec2(0.5f, 1.0f));
-	object.uv.push_back(glm::vec2(1.0f, 0.0f));*/
 
 	// Creates on GPU the vertex array
     glGenVertexArrays(1, &VAO[0]);
@@ -265,8 +245,8 @@ void buildGeometry()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
 	//vertex position position VAO
     // Sets the vertex attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	//uv VBO
 	// Sets the buffer geometry data
@@ -275,8 +255,8 @@ void buildGeometry()
 
 	//uv VAO
 	// Sets the vertex attributes
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 	//glBindVertexArray(0);
 	//color VBO
 	// Sets the buffer geometry data
@@ -285,10 +265,9 @@ void buildGeometry()
 
 	//color VAO
 	// Sets the vertex attributes
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glBindVertexArray(0);
-
 
 	modelsObj.push_back(object);
 }
@@ -366,8 +345,12 @@ bool init()
 	
     // Loads all the geometry into the GPU
     buildGeometry();
-    // Loads the texture into the GPU
+    
+	// Loads the texture into the GPU
     textureID = loadTexture("assets/textures/bricks2.jpg");
+
+	//Initializate MVP values
+	initMVP();
 
     return true;
 }
@@ -391,6 +374,46 @@ void processKeyboardInput(GLFWwindow *window)
         delete shader;
         shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
     }
+	// Checks if the c key is pressed
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+	{
+		//Changes camera mode
+		if (!cameraMode)
+		{
+			cameraMode = true;
+			Interface->hide();
+		}
+		else {
+			cameraMode = false;
+			Interface->show();
+
+		}
+	}
+}
+
+
+void chechKeys() {
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += speed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= speed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+}
+/*
+* Update MVP
+*/
+void updateMVP()
+{
+	Model = glm::mat4(1.0f);
+	glm::mat4 Rotation = glm::yawPitchRoll(glm::radians(yaw), glm::radians(pitch), 0.0f);
+	cameraFront = glm::vec3(Rotation * glm::vec4(0, 0, -1, 0));
+	cameraUp = glm::vec3(Rotation * glm::vec4(0, 1, 0, 0));
+
+	View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+	//Proj = getLookAt();
 }
 /**
  * Render Function
@@ -404,14 +427,8 @@ void render()
     shader->use();
 
 	//MVP trnasformations
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-	model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
-	model = glm::mat4(1.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(4, 3, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-
-	glm::mat4 proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
-
-	glm::mat4 MVP = (proj * view * model);
+	updateMVP();
+	glm::mat4 MVP = (Proj * View * Model);
 	shader->setMat4("MVP", MVP);
 
 	//Texture
@@ -432,6 +449,8 @@ void render()
 
     // Swap the buffer
     glfwSwapBuffers(window);
+
+	chechKeys();
 }
 /**
  * App main loop
@@ -446,7 +465,6 @@ void update()
 
         // Renders everything
         render();
-		
 
         // Check and call events
         glfwPollEvents();

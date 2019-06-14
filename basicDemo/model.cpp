@@ -99,6 +99,7 @@ model model::loadObj(std::string path)
 	std::vector< glm::vec2 > UV;
 	for (int i = 0; i < vertInd.size(); i++)
 	{
+		//strip triangle si hay mas caras(?
 		a.vertex.push_back(glm::vec3(allVert[vertInd[i]]));
 		a.uv.push_back(allUV[uvInd[i]]);
 		a.normal.push_back(glm::vec3(allNormal[normInd[i]]));

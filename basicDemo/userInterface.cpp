@@ -49,10 +49,10 @@ void userInterface::reshape()
 
 void userInterface::show()
 {
-	TwDefine("Figure visible = true");
+	TwDefine("Obj visible = true");
 }
 
 void userInterface::hide()
 {
-	TwDefine("Figure visible = false");
+	TwDefine("Obj visible = false");
 }
