@@ -214,6 +214,39 @@ void buildGeometry()
 	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
 	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
 	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); 
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f)); 
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
+	object.color.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+	object.color.push_back(glm::vec3(0.0f, 0.0f, 1.0f));
 
 	/*object.uv.push_back(glm::vec2(0.0f, 0.0f));
 	object.uv.push_back(glm::vec2(0.5f, 1.0f));
@@ -232,8 +265,8 @@ void buildGeometry()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
 	//vertex position position VAO
     // Sets the vertex attributes
-    glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
 	
 	//uv VBO
 	// Sets the buffer geometry data
@@ -242,19 +275,19 @@ void buildGeometry()
 
 	//uv VAO
 	// Sets the vertex attributes
-	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	glBindVertexArray(1);
+	glEnableVertexAttribArray(1);
+	//glBindVertexArray(0);
 	//color VBO
 	// Sets the buffer geometry data
 	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.color.size(), &object.color[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
 
 	//color VAO
 	// Sets the vertex attributes
-	glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glBindVertexArray(2);
+	glEnableVertexAttribArray(2);
+    glBindVertexArray(0);
 
 
 	modelsObj.push_back(object);
