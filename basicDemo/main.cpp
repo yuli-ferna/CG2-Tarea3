@@ -46,15 +46,14 @@ glm::mat4 Proj;
 bool cameraMode = false;
 float speed = 0.05f;
 float speedMouse = 0.05f;
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.5f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 position = glm::vec3(0.0f, 0.5f, 3.0f);
+glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
 GLfloat yaw;
 GLfloat pitch;
 
 // position
-glm::vec3 position = glm::vec3(0, 0, 5);
 // horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // vertical angle : 0, look at the horizon
@@ -120,7 +119,7 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 
 		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse;
 		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse;
-
+		//updateInputMouse(xoffset, yoffset)
 		yaw += xoffset;
 		pitch += yoffset;
 	}
@@ -218,7 +217,7 @@ void initGL()
 void initMVP() 
 {
 	Model = glm::mat4(1.0f);
-	View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+	View = glm::lookAt(position, position + front, up);
 	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
 }
@@ -396,19 +395,22 @@ void processKeyboardInput(GLFWwindow *window)
 
 		}
 	}
-}
 
-
-void chechKeys() {
+	//Move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += speed * cameraFront;
+		//updateInputKeyboard('w')		
+		position += speed * front;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= speed * cameraFront;
+		//updateInputKeyboard('s')		
+		position -= speed * front;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+		//updateInputKeyboard('a')		
+		position -= glm::normalize(glm::cross(front, up)) * speed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * speed;
+		//updateInputKeyboard('d')		
+		position += glm::normalize(glm::cross(front, up)) * speed;
 }
+
 /*
 * Update MVP
 */
@@ -416,10 +418,10 @@ void updateMVP()
 {
 	Model = glm::mat4(1.0f);
 	glm::mat4 Rotation = glm::yawPitchRoll(glm::radians(yaw), glm::radians(pitch), 0.0f);
-	cameraFront = glm::vec3(Rotation * glm::vec4(0, 0, -1, 0));
-	cameraUp = glm::vec3(Rotation * glm::vec4(0, 1, 0, 0));
+	front = glm::vec3(Rotation * glm::vec4(0, 0, -1, 0));
+	up = glm::vec3(Rotation * glm::vec4(0, 1, 0, 0));
 
-	View = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+	View = glm::lookAt(position, position + front, up);
 	//Proj = getLookAt();
 }
 /**
@@ -462,8 +464,6 @@ void render()
 
     // Swap the buffer
     glfwSwapBuffers(window);
-
-	chechKeys();
 }
 /**
  * App main loop

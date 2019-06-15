@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm\gtx\euler_angles.hpp> // glm::yawPitchRoll
 
 #include <iostream>
 
@@ -22,22 +24,28 @@ class camera
 	glm::vec3 up;
 
 	//mouse
-	float pitch;
-	float yaw;
-	float roll;
+	GLfloat yaw;
+	GLfloat pitch;
+
+	float speed;
+	float speedMouse;
 
 	void updateCamera();
 public:
-	camera(glm::vec3 position, glm::vec3 direction, glm::vec3 worldUp);
+	camera();
 	~camera();
 	glm::mat4 getView();
 	glm::vec3 getPosition();
-	void updateMouseInput(const float& dt, const double& offsetX, const double& offsetY);
-	void updateKeyboardInput(const float& dt, const int direction);
+	void updateInputMouse(GLfloat offsetX, GLfloat offsetY);
+	void updateInputMouse(const double offsetX, const double offsetY);
+	void updateInputKeyboard(const char direction);
 	void updateInput(const float& dt,const int direction, const double& offsetX, const double& offsetY);
 	bool getCameraMode();
 	void setCameraMode(bool cameraMod);
+	int getSpeedMouse();
+	void setSpeedMouse(int speed);
+	int getSpeed();
+	void setSpeed(int speedK);
 private:
 
 };
-
