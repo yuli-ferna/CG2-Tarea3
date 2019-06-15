@@ -20,9 +20,9 @@ public:
 	// Index (GPU) vertex array object
 	unsigned int VAO[1];
 	//Propiedades de color del modelo
-	glm::vec3 ambiental;
-	glm::vec3 difuse;
-	glm::vec3 specular;
+	glm::vec3 kamb; //Componente ambiental 
+	glm::vec3 kdif; //Componente 
+	glm::vec3 kspec;//Componente 
 
 	model();
 	~model();

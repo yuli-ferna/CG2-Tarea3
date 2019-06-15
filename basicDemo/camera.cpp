@@ -55,17 +55,13 @@ void camera::updateInputMouse(GLfloat offsetX, GLfloat offsetY)
 
 void camera::updateInputKeyboard(const char direction)
 {
-	if (direction == 'w')
-		//updateInputKeyboard('w')		
+	if (direction == 'w')		
 		position += speed * front;
-	if (direction == 's')
-		//updateInputKeyboard('s')		
+	if (direction == 's')		
 		position -= speed * front;
-	if (direction == 'a')
-		//updateInputKeyboard('a')		
+	if (direction == 'a')		
 		position -= glm::normalize(glm::cross(front, up)) * speed;
-	if (direction == 'd')
-		//updateInputKeyboard('d')		
+	if (direction == 'd')		
 		position += glm::normalize(glm::cross(front, up)) * speed;
 }
 

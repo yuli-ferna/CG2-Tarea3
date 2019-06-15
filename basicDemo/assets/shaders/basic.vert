@@ -8,6 +8,9 @@ layout (location = 2) in vec3 vertexNormal;
 
 //Uniforms MVP matrix
 uniform mat4 MVP;
+uniform mat4 Model;
+uniform mat4 View;
+uniform mat4 Proj;
 
 
 // Vertex data out data

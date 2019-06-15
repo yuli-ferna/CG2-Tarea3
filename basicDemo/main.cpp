@@ -228,7 +228,8 @@ void buildGeometry()
 {
 	std::vector< std::string > paths;
 	//Paths
-	paths.push_back(".\\assets\\models\\cube.obj");;
+	paths.push_back(".\\assets\\models\\cubeS.obj");
+	paths.push_back(".\\assets\\models\\poke.obj");
 	paths.push_back(".\\assets\\models\\cat.obj");
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
@@ -351,7 +352,7 @@ bool init()
     buildGeometry();
     
 	// Loads the texture into the GPU
-    textureID = loadTexture("assets/textures/bricks2.jpg");
+    textureID = loadTexture("assets/textures/Neji.jpg");
 
 	//Initializate MVP values
 	initMVP();
@@ -439,6 +440,9 @@ void render()
 	updateMVP();
 	glm::mat4 MVP = (Proj * View * Model);
 	shader->setMat4("MVP", MVP);
+	shader->setMat4("Model", Model);
+	shader->setMat4("View", View);
+	shader->setMat4("Proj", Proj);
 
 	//Texture
 	glActiveTexture(GL_TEXTURE0);
