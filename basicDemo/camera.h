@@ -34,6 +34,7 @@ class camera
 public:
 	camera();
 	~camera();
+	glm::mat4 getRotation();
 	glm::mat4 getView();
 	glm::vec3 getPosition();
 	void updateInputMouse(GLfloat offsetX, GLfloat offsetY);
@@ -41,11 +42,12 @@ public:
 	void updateInputKeyboard(const char direction);
 	void updateInput(const float& dt,const int direction, const double& offsetX, const double& offsetY);
 	bool getCameraMode();
+	void changeCameraMode();
 	void setCameraMode(bool cameraMod);
-	int getSpeedMouse();
-	void setSpeedMouse(int speed);
-	int getSpeed();
-	void setSpeed(int speedK);
+	float getSpeedMouse();
+	void setSpeedMouse(float speed);
+	float getSpeed();
+	void setSpeed(float speedK);
 private:
 
 };

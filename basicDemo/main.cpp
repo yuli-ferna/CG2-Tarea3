@@ -14,6 +14,7 @@
 #include <stb_image.h>
 #include "userInterface.h"
 #include "model.h"
+#include "camera.h"
 
 #include "Shader.h"
 #include <vector>
@@ -30,10 +31,10 @@ const char *windowTitle = "Yuliana Fernandez";
 GLFWwindow *window;
 // Shader object
 Shader *shader;
-// Index (GPU) of the geometry buffer
-unsigned int VBO[3];
+//// Index (GPU) of the geometry buffer
+//unsigned int VBO[3];
 // Index (GPU) vertex array object
-unsigned int VAO[1];
+//unsigned int VAO[1];
 // Index (GPU) of the texture
 unsigned int textureID;
 
@@ -44,22 +45,17 @@ glm::mat4 Proj;
 
 //Camera
 bool cameraMode = false;
-float speed = 0.05f;
-float speedMouse = 0.05f;
-glm::vec3 position = glm::vec3(0.0f, 0.5f, 3.0f);
-glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-GLfloat yaw;
-GLfloat pitch;
+//glm::vec3 position = glm::vec3(0.0f, 0.5f, 3.0f);
+//glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
+//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+//
+//float yaw = 0;
+//float pitch = 0;
 
+camera Camara;
+float speedMouse = Camara.getSpeedMouse();
 // position
-// horizontal angle : toward -Z
-float horizontalAngle = 3.14f;
-// vertical angle : 0, look at the horizon
-float verticalAngle = 0.0f;
-// Initial Field of View
-float initialFoV = 45.0f;
 
 
 //tweakBar
@@ -113,15 +109,16 @@ void onMouseButton(GLFWwindow* window, int button, int action, int mods)
 void onMouseMotion(GLFWwindow* window, double xpos, double ypos) 
 {
 	TwMouseMotion(px(static_cast<int>(xpos)), px(static_cast<int>(ypos)));
-	if (cameraMode) {
+	if (Camara.getCameraMode()) {
 
 		glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
-
 		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse;
 		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse;
-		//updateInputMouse(xoffset, yoffset)
-		yaw += xoffset;
+		Camara.updateInputMouse(xoffset, yoffset);
+
+		/*yaw += xoffset;
 		pitch += yoffset;
+		std::cout << "main:\n" << yaw << ' ' << pitch << std::endl;*/
 	}
 }
 void onCharacter(GLFWwindow* window, unsigned int codepoint) {
@@ -216,8 +213,9 @@ void initGL()
 
 void initMVP() 
 {
+	std::cout << Camara.getCameraMode() << std::endl;
 	Model = glm::mat4(1.0f);
-	View = glm::lookAt(position, position + front, up);
+	View = Camara.getView();
 	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
 }
@@ -384,31 +382,33 @@ void processKeyboardInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
 	{
 		//Changes camera mode
-		if (!cameraMode)
+		if (!Camara.getCameraMode())
 		{
-			cameraMode = true;
+			//cameraMode = true;
 			Interface->hide();
 		}
 		else {
-			cameraMode = false;
+			//cameraMode = false;
 			Interface->show();
 
 		}
+		Camara.changeCameraMode();
+		//cameraMode = !cameraMode;
 	}
 
 	//Move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		//updateInputKeyboard('w')		
-		position += speed * front;
+		Camara.updateInputKeyboard('w');
+		//position += speed * front;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		//updateInputKeyboard('s')		
-		position -= speed * front;
+		Camara.updateInputKeyboard('s');
+		//position -= speed * front;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		//updateInputKeyboard('a')		
-		position -= glm::normalize(glm::cross(front, up)) * speed;
+		Camara.updateInputKeyboard('a');
+		//position -= glm::normalize(glm::cross(front, up)) * speed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		//updateInputKeyboard('d')		
-		position += glm::normalize(glm::cross(front, up)) * speed;
+		Camara.updateInputKeyboard('d');
+		//position += glm::normalize(glm::cross(front, up)) * speed;
 }
 
 /*
@@ -417,11 +417,11 @@ void processKeyboardInput(GLFWwindow *window)
 void updateMVP()
 {
 	Model = glm::mat4(1.0f);
-	glm::mat4 Rotation = glm::yawPitchRoll(glm::radians(yaw), glm::radians(pitch), 0.0f);
+	/*glm::mat4 Rotation = Camara.getRotation();
 	front = glm::vec3(Rotation * glm::vec4(0, 0, -1, 0));
 	up = glm::vec3(Rotation * glm::vec4(0, 1, 0, 0));
-
-	View = glm::lookAt(position, position + front, up);
+*/
+	View = Camara.getView();
 	//Proj = getLookAt();
 }
 /**

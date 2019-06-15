@@ -15,8 +15,14 @@ class model
 public:
 	std::vector<glm::vec3> vertex, normal, color;
 	std::vector<glm::vec2> uv;
+	// Index (GPU) of the geometry buffer
 	unsigned int VBO[3];
+	// Index (GPU) vertex array object
 	unsigned int VAO[1];
+	//Propiedades de color del modelo
+	glm::vec3 ambiental;
+	glm::vec3 difuse;
+	glm::vec3 specular;
 
 	model();
 	~model();
