@@ -15,6 +15,9 @@ class model
 public:
 	std::vector<glm::vec3> vertex, normal, color;
 	std::vector<glm::vec2> uv;
+	unsigned int VBO[3];
+	unsigned int VAO[1];
+
 	model();
 	~model();
 

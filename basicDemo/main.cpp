@@ -67,6 +67,7 @@ float initialFoV = 45.0f;
 userInterface *Interface;
 
 //Models
+model object;
 std::vector< model > modelsObj;
 /**
  * Handles the window resize
@@ -228,48 +229,54 @@ void initMVP()
  * */
 void buildGeometry()
 {
-	model object;
+	std::vector< std::string > paths;
+	//Paths
+	paths.push_back(".\\assets\\models\\cube.obj");;
+	paths.push_back(".\\assets\\models\\cat.obj");
+	//Load models
+	for (size_t i = 0; i < paths.size(); i++)
+	{
+		object = object.loadObj(paths[i]);
+
+		// Creates on GPU the vertex array
+		glGenVertexArrays(1, &object.VAO[0]);
+		// Creates on GPU the vertex buffer object
+		glGenBuffers(3, object.VBO);
+		// Binds the vertex array to set all the its properties
+		glBindVertexArray(object.VAO[0]);
+
+		//vexter position object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
+		//vertex position position object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
-	object = object.loadObj(".\\assets\\models\\cube2.obj");
+		//uv object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
 
-	// Creates on GPU the vertex array
-    glGenVertexArrays(1, &VAO[0]);
-    // Creates on GPU the vertex buffer object
-    glGenBuffers(3,VBO);
-    // Binds the vertex array to set all the its properties
-    glBindVertexArray(VAO[0]);
+		//uv object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		//glBindVertexArray(0);
+		//color object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[2]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
 
-	//vexter position VBO
-    // Sets the buffer geometry data
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
-	//vertex position position VAO
-    // Sets the vertex attributes
-    glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	
-	//uv VBO
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
+		//color object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
 
-	//uv VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	//glBindVertexArray(0);
-	//color VBO
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
-
-	//color VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glBindVertexArray(0);
-
-	modelsObj.push_back(object);
+		modelsObj.push_back(object);
+	}
 }
 /**
  * Loads a texture into the GPU
@@ -435,12 +442,18 @@ void render()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 	shader->setInt("text", 0);
+
+	//Draw models of the scene
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		// Binds the vertex array to be drawn
+		glBindVertexArray(modelsObj[i].VAO[0]);
     
-	// Binds the vertex array to be drawn
-    glBindVertexArray(VAO[0]);
-    
-	// Renders the triangle gemotry
-    glDrawArrays(GL_TRIANGLES, 0, modelsObj[0].vertex.size());
+		// Renders the triangle gemotry
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i].vertex.size());
+		
+	}
+
     glBindVertexArray(0);
 
 
@@ -497,13 +510,19 @@ int main(int argc, char const *argv[])
 
     // Deletes the texture from the gpu
     glDeleteTextures(1, &textureID);
-    // Deletes the vertex array from the GPU
-    glDeleteVertexArrays(1, &VAO[0]);
-    // Deletes the vertex object from the GPU
-	glDeleteBuffers(1, &VBO[0]);
-	glDeleteBuffers(1, &VBO[1]);
-	glDeleteBuffers(1, &VBO[2]);
-    // Destroy the shader
+
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		// Deletes the vertex array from the GPU
+		glDeleteVertexArrays(1, &modelsObj[i].VAO[0]);
+		// Deletes the vertex object from the GPU
+		glDeleteBuffers(1, &modelsObj[i].VBO[0]);
+		glDeleteBuffers(1, &modelsObj[i].VBO[1]);
+		glDeleteBuffers(1, &modelsObj[i].VBO[2]);
+
+	}
+
+	// Destroy the shader
     delete shader;
 	delete Interface;
 
