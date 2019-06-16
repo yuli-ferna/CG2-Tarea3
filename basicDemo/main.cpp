@@ -1,3 +1,4 @@
+#define N_SPOTLIGHTS 1
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -16,6 +17,8 @@
 #include "model.h"
 #include "camera.h"
 #include "light.h"
+#include "pointLight.h"
+#include "spotLight.h"
 
 #include "Shader.h"
 #include <vector>
@@ -31,12 +34,8 @@ const char *windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow *window;
 // Shader object
-Shader *shader;
-//// Index (GPU) of the geometry buffer
-//unsigned int VBO[3];
-// Index (GPU) vertex array object
-//unsigned int VAO[1];
-// Index (GPU) of the texture
+Shader *shader, *shaderLightDir, *shaderLightPoint;
+
 unsigned int textureID;
 
 //MVP Matrix
@@ -49,7 +48,10 @@ camera Camara;
 float speedMouse = Camara.getSpeedMouse();
 
 //Lights
+enum modeLight {dir, point};
+modeLight mode = dir;
 light directionalLight(glm::vec3(0.0f, 5.0f, 5.0f));
+pointLight PointLight(glm::vec3(0.0f, 5.0f, 5.0f));
 
 
 //tweakBar
@@ -57,7 +59,8 @@ userInterface *Interface;
 
 //Models
 model object;
-std::vector< model > modelsObj;
+std::vector< model > modelsObj, lightsObj;
+
 /**
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -207,6 +210,7 @@ void initGL()
 
 void initMVP() 
 {
+	std::cout << "dsfsdfds: " << PointLight.getAmbientColor().x << std::endl;
 	Model = glm::mat4(1.0f);
 	View = Camara.getView();
 	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 190.0f);
@@ -222,8 +226,9 @@ void buildGeometry()
 	std::vector< std::string > paths;
 	//Paths
 	paths.push_back(".\\assets\\models\\cubeS.obj");
-	paths.push_back(".\\assets\\models\\poke.obj");
-	paths.push_back(".\\assets\\models\\cat.obj");
+	paths.push_back(".\\assets\\models\\pokeballS.obj");
+	paths.push_back(".\\assets\\models\\catS.obj");
+	//paths.push_back(".\\assets\\models\\light1S.obj");
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
 	{
@@ -265,8 +270,51 @@ void buildGeometry()
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glBindVertexArray(0);
-
 		modelsObj.push_back(object);
+	}
+
+	//Load Lights
+	for (size_t i = 0; i < N_SPOTLIGHTS; i++)
+	{
+		object = object.loadObj(".\\assets\\models\\light1S.obj");
+
+		// Creates on GPU the vertex array
+		glGenVertexArrays(1, &object.VAO[0]);
+		// Creates on GPU the vertex buffer object
+		glGenBuffers(3, object.VBO);
+		// Binds the vertex array to set all the its properties
+		glBindVertexArray(object.VAO[0]);
+
+		//vexter position object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
+		//vertex position position object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		//uv object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
+
+		//uv object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		//glBindVertexArray(0);
+		//color object.VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[2]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
+
+		//color object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
+		lightsObj.push_back(object);
 	}
 }
 /**
@@ -339,7 +387,9 @@ bool init()
     initGL();
 
     // Loads the shader
-    shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+	shaderLightDir = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+	shaderLightPoint = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
 	
     // Loads all the geometry into the GPU
     buildGeometry();
@@ -369,8 +419,13 @@ void processKeyboardInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
     {
         // Reloads the shader
-        delete shader;
-        shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+		delete shader;
+		delete shaderLightDir;
+		delete shaderLightPoint;
+		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+		shaderLightDir = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+		shaderLightPoint = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
+
     }
 	// Checks if the c key is pressed
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
@@ -404,14 +459,14 @@ void processKeyboardInput(GLFWwindow *window)
 		Camara.updateInputKeyboard('d');
 	
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	{
 		directionalLight.leftLightDir();
-	}
+	
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	{
 		directionalLight.rightLightDir();
 
-	}
+	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+		directionalLight.changeONOFF();
+
 
 }
 
@@ -424,6 +479,126 @@ void updateMVP()
 	View = Camara.getView();
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
+void renderPointLight() 
+{
+	// Use the shader
+	shaderLightPoint->use();
+
+	//MVP trnasformations
+	updateMVP();
+	glm::mat4 MVP = (Proj * View * Model);
+	shaderLightPoint->setMat4("MVP", MVP);
+	shaderLightPoint->setMat4("Model", Model);
+	shaderLightPoint->setMat4("View", View);
+	shaderLightPoint->setMat4("Proj", Proj);
+
+	//Lights
+	shaderLightPoint->setVec3("lightDir", directionalLight.getLightDir());
+	shaderLightPoint->setVec3("ambientColor", directionalLight.getAmbientColor());
+	shaderLightPoint->setVec3("diffuseColor", directionalLight.getDiffuseColor());
+	shaderLightPoint->setVec3("specularColor", directionalLight.getSpecularColor());
+	shaderLightPoint->setBool("on", directionalLight.getONOFF());
+
+	//Draw models of the scene
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		//Material
+		shaderLightPoint->setVec3("ka", modelsObj[i].getKAmbient());
+		shaderLightPoint->setVec3("kd", modelsObj[i].getKDiffuse());
+		shaderLightPoint->setVec3("ks", modelsObj[i].getKSpecular());
+		shaderLightPoint->setFloat("n", modelsObj[i].getShinniness());
+
+		//Texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		shaderLightPoint->setInt("text", 0);
+
+		// Binds the vertex array to be drawn
+		glBindVertexArray(modelsObj[i].VAO[0]);
+
+		// Renders the triangle gemotry
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i].vertex.size());
+
+	}
+	glBindVertexArray(0);
+
+}
+void renderDirLight() 
+{
+	// Use the shader
+	shaderLightDir->use();
+
+	//MVP trnasformations
+	updateMVP();
+	glm::mat4 MVP = (Proj * View * Model);
+	shaderLightDir->setMat4("MVP", MVP);
+	shaderLightDir->setMat4("Model", Model);
+	shaderLightDir->setMat4("View", View);
+	shaderLightDir->setMat4("Proj", Proj);
+
+	//Lights
+	shaderLightDir->setVec3("lightDir", directionalLight.getLightDir());
+	shaderLightDir->setVec3("ambientColor", directionalLight.getAmbientColor());
+	shaderLightDir->setVec3("diffuseColor", directionalLight.getDiffuseColor());
+	shaderLightDir->setVec3("specularColor", directionalLight.getSpecularColor());
+	shaderLightDir->setBool("on", directionalLight.getONOFF());
+
+	//Draw models of the scene
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		//Material
+		shaderLightDir->setVec3("ka", modelsObj[i].getKAmbient());
+		shaderLightDir->setVec3("kd", modelsObj[i].getKDiffuse());
+		shaderLightDir->setVec3("ks", modelsObj[i].getKSpecular());
+		shaderLightDir->setFloat("n", modelsObj[i].getShinniness());
+
+		//Texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		shaderLightDir->setInt("text", 0);
+
+		// Binds the vertex array to be drawn
+		glBindVertexArray(modelsObj[i].VAO[0]);
+    
+		// Renders the triangle gemotry
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i].vertex.size());
+		
+	}
+
+	glBindVertexArray(0);
+	//Light models
+	// Use the shader
+	shader->use();
+
+	//MVP trnasformations
+	updateMVP();
+	MVP = (Proj * View * Model);
+	shader->setMat4("MVP", MVP);
+
+	//Draw models of the scene
+	for (size_t i = 0; i < lightsObj.size(); i++)
+	{
+		//Material
+		shader->setVec3("ka", lightsObj[i].getKAmbient());
+		shader->setVec3("kd", lightsObj[i].getKDiffuse());
+		shader->setVec3("ks", lightsObj[i].getKSpecular());
+		shader->setFloat("n", lightsObj[i].getShinniness());
+
+		//Texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		shader->setInt("text", 0);
+
+		// Binds the vertex array to be drawn
+		glBindVertexArray(lightsObj[i].VAO[0]);
+
+		// Renders the triangle gemotry
+		glDrawArrays(GL_TRIANGLES, 0, lightsObj[i].vertex.size());
+
+	}
+	glBindVertexArray(0);
+
+}
 /**
  * Render Function
  * */
@@ -433,34 +608,15 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     /** Draws code goes here **/
     // Use the shader
-    shader->use();
-
-	//MVP trnasformations
-	updateMVP();
-	glm::mat4 MVP = (Proj * View * Model);
-	shader->setMat4("MVP", MVP);
-	shader->setMat4("Model", Model);
-	shader->setMat4("View", View);
-	shader->setMat4("Proj", Proj);
-	shader->setVec3("lightDir", directionalLight.getLightDir());
-
-	//Texture
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	shader->setInt("text", 0);
-
-	//Draw models of the scene
-	for (size_t i = 0; i < modelsObj.size(); i++)
+	//shader->use();
+	if (mode == dir)
 	{
-		// Binds the vertex array to be drawn
-		glBindVertexArray(modelsObj[i].VAO[0]);
-    
-		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i].vertex.size());
-		
+		renderDirLight();		
 	}
-
-    glBindVertexArray(0);
+	else if (mode == point)
+	{
+		renderPointLight();
+	}
 
 
 	//tweakbar
@@ -527,7 +683,8 @@ int main(int argc, char const *argv[])
 	}
 
 	// Destroy the shader
-    delete shader;
+	delete shader;
+	delete shaderLightDir;
 	delete Interface;
 
 	TwTerminate();

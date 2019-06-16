@@ -24,11 +24,24 @@ public:
 	glm::vec3 kdif; //Componente difusa
 	glm::vec3 kspec;//Componente especular
 
-	int shinniness;
+	float shinniness;
+	float roughness;
 	model();
 	~model();
 
 	model loadObj(std::string path);
+	void loadMTL(std::string path);
+	glm::vec3 getKAmbient();
+	void setKAmbient(glm::vec3 ambC);
+	glm::vec3 getKDiffuse();
+	void setKDiffuse(glm::vec3 difC);
+	glm::vec3 getKSpecular();
+	void setKSpecular(glm::vec3 speC);
+	float getShinniness();
+	void setShinniness(float n);
+	float getRoughness();
+	void setRoghness(float n);
+
 private:
 
 };

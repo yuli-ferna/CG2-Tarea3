@@ -134,7 +134,9 @@
     <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="pointLight.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="spotLight.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="userInterface.cpp" />
   </ItemGroup>
@@ -143,7 +145,9 @@
     <ClInclude Include="light.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="pointLight.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="spotLight.h" />
     <ClInclude Include="userInterface.h" />
   </ItemGroup>
   <ItemGroup>
@@ -151,6 +155,10 @@
     <None Include="assets\shaders\basic.vert" />
     <None Include="assets\shaders\lightDirectional.frag" />
     <None Include="assets\shaders\lightDirectional.vert" />
+    <None Include="assets\shaders\lightPoint.frag" />
+    <None Include="assets\shaders\lightPoint.vert" />
+    <None Include="assets\shaders\lightSpot.frag" />
+    <None Include="assets\shaders\lightSpot.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,7 +3,10 @@
 
 model::model()
 {
-
+	kamb = glm::vec3(0.10);
+	kdif = glm::vec3(0.55);
+	kspec = glm::vec3(0.70);
+	shinniness = 32;
 }
 
 model::~model()
@@ -99,7 +102,6 @@ model model::loadObj(std::string path)
 	std::vector< glm::vec2 > UV;
 	for (int i = 0; i < vertInd.size(); i++)
 	{
-		//strip triangle si hay mas caras(?
 		a.vertex.push_back(glm::vec3(allVert[vertInd[i]]));
 		a.uv.push_back(allUV[uvInd[i]]);
 		a.normal.push_back(glm::vec3(allNormal[normInd[i]]));
@@ -107,4 +109,108 @@ model model::loadObj(std::string path)
 
 	return a;
 
+}
+
+void model::loadMTL(std::string path)
+{
+	std::ifstream file = std::ifstream(path);
+	if (!file.is_open()) {
+		std::cout << "No se ecuentra: " << path << std::endl;
+	}
+	
+	while (file)
+	{
+		std::string token, first, trash;
+		float Kx, Ky, Kz;
+		getline(file, token);
+		std::istringstream str(token);
+		str >> first;
+		
+		if (first == "Ka")
+		{
+			str >> Kx >> Ky >> Kz;
+			kamb = glm::vec3(Kx, Ky, Kz);
+		}
+		else if (first == "Kd")
+		{
+			str >> Kx >> Ky >> Kz;
+			kdif = glm::vec3(Kx, Ky, Kz);
+		}
+		else if (first == "Ks")
+		{
+			str >> Kx >> Ky >> Kz;
+			kspec = glm::vec3(Kx, Ky, Kz);
+		}
+		else if (first == "Ke") {
+
+		}
+		else if (first == "Ni") {
+
+		}
+		else if (first == "d") {
+
+		}
+		else if (first == "illum") {
+
+		}
+		else if (first == "Ns") {
+
+		}
+		else if (first == "newmtl") {
+
+		}
+		else if (first == "map_Kd") {
+
+		}
+	}
+}
+
+glm::vec3 model::getKAmbient()
+{
+	return kamb;
+}
+
+void model::setKAmbient(glm::vec3 ambC)
+{
+	kamb = ambC;
+}
+
+glm::vec3 model::getKDiffuse()
+{
+	return kdif;
+}
+
+void model::setKDiffuse(glm::vec3 difC)
+{
+	kdif = difC;
+}
+
+glm::vec3 model::getKSpecular()
+{
+	return kspec;
+}
+
+void model::setKSpecular(glm::vec3 speC)
+{
+	kspec = speC;
+}
+
+float model::getShinniness()
+{
+	return shinniness;
+}
+
+void model::setShinniness(float n)
+{
+	shinniness = n;
+}
+
+float model::getRoughness()
+{
+	return roughness;
+}
+
+void model::setRoghness(float n)
+{
+	roughness = n;
 }

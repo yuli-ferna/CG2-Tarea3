@@ -42,6 +42,12 @@
     <ClCompile Include="light.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
+    <ClCompile Include="pointLight.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
+    <ClCompile Include="spotLight.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -62,6 +68,12 @@
     <ClInclude Include="light.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
+    <ClInclude Include="pointLight.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="spotLight.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\basic.frag">
@@ -74,6 +86,18 @@
       <Filter>Archivos de recursos\Shaders</Filter>
     </None>
     <None Include="assets\shaders\lightDirectional.frag">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\lightPoint.frag">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\lightPoint.vert">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\lightSpot.frag">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\lightSpot.vert">
       <Filter>Archivos de recursos\Shaders</Filter>
     </None>
   </ItemGroup>
