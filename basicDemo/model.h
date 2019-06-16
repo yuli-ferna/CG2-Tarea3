@@ -21,9 +21,10 @@ public:
 	unsigned int VAO[1];
 	//Propiedades de color del modelo
 	glm::vec3 kamb; //Componente ambiental 
-	glm::vec3 kdif; //Componente 
-	glm::vec3 kspec;//Componente 
+	glm::vec3 kdif; //Componente difusa
+	glm::vec3 kspec;//Componente especular
 
+	int shinniness;
 	model();
 	~model();
 

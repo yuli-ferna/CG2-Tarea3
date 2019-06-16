@@ -15,6 +15,7 @@
 #include "userInterface.h"
 #include "model.h"
 #include "camera.h"
+#include "light.h"
 
 #include "Shader.h"
 #include <vector>
@@ -44,18 +45,11 @@ glm::mat4 View;
 glm::mat4 Proj;
 
 //Camera
-bool cameraMode = false;
-
-//glm::vec3 position = glm::vec3(0.0f, 0.5f, 3.0f);
-//glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
-//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-//
-//float yaw = 0;
-//float pitch = 0;
-
 camera Camara;
 float speedMouse = Camara.getSpeedMouse();
-// position
+
+//Lights
+light directionalLight(glm::vec3(0.0f, 5.0f, 5.0f));
 
 
 //tweakBar
@@ -213,10 +207,9 @@ void initGL()
 
 void initMVP() 
 {
-	std::cout << Camara.getCameraMode() << std::endl;
 	Model = glm::mat4(1.0f);
 	View = Camara.getView();
-	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 190.0f);
 
 }
 /**
@@ -400,16 +393,26 @@ void processKeyboardInput(GLFWwindow *window)
 	//Move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		Camara.updateInputKeyboard('w');
-		//position += speed * front;
+		
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		Camara.updateInputKeyboard('s');
-		//position -= speed * front;
+		
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		Camara.updateInputKeyboard('a');
-		//position -= glm::normalize(glm::cross(front, up)) * speed;
+		
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		Camara.updateInputKeyboard('d');
-		//position += glm::normalize(glm::cross(front, up)) * speed;
+	
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	{
+		directionalLight.leftLightDir();
+	}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	{
+		directionalLight.rightLightDir();
+
+	}
+
 }
 
 /*
@@ -418,12 +421,8 @@ void processKeyboardInput(GLFWwindow *window)
 void updateMVP()
 {
 	Model = glm::mat4(1.0f);
-	/*glm::mat4 Rotation = Camara.getRotation();
-	front = glm::vec3(Rotation * glm::vec4(0, 0, -1, 0));
-	up = glm::vec3(Rotation * glm::vec4(0, 1, 0, 0));
-*/
 	View = Camara.getView();
-	//Proj = getLookAt();
+	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
 /**
  * Render Function
@@ -443,6 +442,7 @@ void render()
 	shader->setMat4("Model", Model);
 	shader->setMat4("View", View);
 	shader->setMat4("Proj", Proj);
+	shader->setVec3("lightDir", directionalLight.getLightDir());
 
 	//Texture
 	glActiveTexture(GL_TEXTURE0);
