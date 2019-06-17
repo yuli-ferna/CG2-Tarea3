@@ -22,19 +22,57 @@ userInterface* userInterface::Instance()
 
 userInterface::userInterface()
 {
-	mUserInterface = TwNewBar("Obj");
+	mUserInterface = TwNewBar("Tarea");
 
-	TwDefine("Obj refresh = '0.0001f'");
-	TwDefine("Obj resizable = false");
-	TwDefine("Obj fontresizable = false");
-	TwDefine("Obj movable = true");
-	TwDefine("Obj visible = true");
-	TwDefine("Obj position = '10 10'");
-	TwDefine("Obj size = '250 200'");
-	TwDefine("Obj color='143 66 244'");
+	TwDefine("Tarea refresh = '0.0001f'");
+	TwDefine("Tarea resizable = true");
+	TwDefine("Tarea fontresizable = false");
+	TwDefine("Tarea movable = true");
+	TwDefine("Tarea visible = true");
+	TwDefine("Tarea position = '10 10'");
+	TwDefine("Tarea size = '200 300'");
+	TwDefine("Tarea color='143 66 244'");
+
+	TwAddVarRW(mUserInterface, "nModel", TW_TYPE_UINT32, &nModel, " group='Modelselect' min=0 label='Select model' step=1 max=2 ");
+	TwAddVarRW(mUserInterface, "ambientalColorMtlDir", TW_TYPE_COLOR3F, &ambientColorMtl, "label='Ambiental Mtl' group='Modelselect'");
+	TwAddVarRW(mUserInterface, "diffuseColorMtlDir", TW_TYPE_COLOR3F, &diffuseColorMtl, "label='Diffuse Mtl' group='Modelselect'");
+	TwAddVarRW(mUserInterface, "specularColorMtlDir", TW_TYPE_COLOR3F, &specularColorMtl, "label='Specular Mtl' group='Modelselect'");
+	TwAddVarRW(mUserInterface, "shinniness", TW_TYPE_FLOAT, &shinniness, "label='Shinniness' group='Modelselect' step=0.01 ");
+	TwAddVarRW(mUserInterface, "roughness", TW_TYPE_FLOAT, &roughness, "label='Roughness' group='Modelselect' step=0.01 ");
+	//TwDefine("Tarea/MaterialColor group='Modelselect' label='Material Color'");
 
 	TwAddSeparator(mUserInterface, "sep1", NULL);
+	//TwAddVarRW(mUserInterface, "LightDir", TW_TYPE_DIR3D, &lightDir, "");
+	TwAddVarRW(mUserInterface, "ON/OFF 1", TW_TYPE_BOOLCPP, &onLightDir, "label='ON/OFF' group='DirectionalLigth'");
+	TwAddVarRW(mUserInterface, "Ligth X", TW_TYPE_FLOAT, &lightDir[0], " group='DirectionLigth' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Ligth Y", TW_TYPE_FLOAT, &lightDir[1], " group='DirectionLigth' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Ligth Z", TW_TYPE_FLOAT, &lightDir[2], " group='DirectionLigth' step=0.01 ");
+	TwDefine("Tarea/DirectionLigth group='DirectionalLigth' label='Direction'");
+	TwAddVarRW(mUserInterface, "ambientalColorDir", TW_TYPE_COLOR3F, &ambientColor, "label='Ambiental Color' group='DirectionalLigth'");
+	TwAddVarRW(mUserInterface, "diffuseColorDir", TW_TYPE_COLOR3F, &diffuseColor,"label='Diffuse Color' group='DirectionalLigth'");
+	TwAddVarRW(mUserInterface, "specularColorDir", TW_TYPE_COLOR3F, &specularColor, "label='Specular Color' group='DirectionalLigth'");
+	//TwDefine("Tarea/DirectionalLigth label='Directional Ligth'");
 
+
+}
+
+glm::vec3 userInterface::getLightDir()
+{
+	return lightDir;
+}
+
+void userInterface::setLightDir(glm::vec3 lightD)
+{
+	lightDir = lightD;
+}
+
+glm::vec3 userInterface::floatpointToVec3(float* arr)
+{
+	glm::vec3 aux;
+	aux.x = arr[0];
+	aux.y = arr[1];
+	aux.z = arr[2];
+	return glm::vec3();
 }
 
 userInterface::~userInterface()

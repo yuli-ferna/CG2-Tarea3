@@ -13,8 +13,8 @@ light::light(glm::vec3 lightP)
 
 light::light()
 {
-	lightPos = glm::vec3(0.0f, -5.0f, 5.0f);
-	lightDir = glm::vec3(0.0f, -5.0f, 5.0f);
+	lightPos = glm::vec3(0.0f, 5.0f, 5.0f);
+	lightDir = glm::vec3(0.0f, 5.0f, 5.0f);
 	ambientColor = glm::vec3(0.1f);
 	diffuseColor = glm::vec3(0.35f);
 	specularColor = glm::vec3(0.75f);
@@ -77,6 +77,11 @@ void light::setSpecularColor(glm::vec3 speC)
 bool light::getONOFF()
 {
 	return ON;
+}
+
+void light::setONOFF(bool b)
+{
+	ON = b;
 }
 
 void light::changeONOFF()

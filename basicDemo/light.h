@@ -24,6 +24,7 @@ public:
 	glm::vec3 getSpecularColor();
 	void setSpecularColor(glm::vec3 speC);
 	bool getONOFF();
+	void setONOFF(bool b);
 	void changeONOFF();
 	void leftLightDir();
 	void rightLightDir();

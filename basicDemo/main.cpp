@@ -22,7 +22,6 @@
 
 #include "Shader.h"
 #include <vector>
-#include "main.h"
 
 #define px(x) x  
 // Window current width
@@ -60,7 +59,7 @@ userInterface *Interface;
 //Models
 model object;
 std::vector< model > modelsObj, lightsObj;
-
+int modelSelect, modelAnt;
 /**
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -121,6 +120,24 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 void onCharacter(GLFWwindow* window, unsigned int codepoint) {
 	TwKeyPressed(codepoint, TW_KMOD_NONE);
 }
+
+void initUserInterfaceValues()
+{
+	//Model
+	Interface->nModel = 0;
+	modelSelect = modelAnt = 0;
+	Interface->shinniness = 10;
+	Interface->roughness = 0;
+	Interface->ambientColorMtl = glm::vec3(0.10);
+	Interface->diffuseColorMtl = glm::vec3(0.55);
+	Interface->specularColorMtl = glm::vec3(0.70);
+	//Light direction
+	Interface->setLightDir(directionalLight.getLightDir());
+	Interface->ambientColor = directionalLight.getAmbientColor();
+	Interface->diffuseColor = directionalLight.getDiffuseColor();
+	Interface->specularColor = directionalLight.getSpecularColor();
+	Interface->onLightDir = directionalLight.getONOFF();
+}
 /**
  * initialize the user interface
  * @returns{bool} true if everything goes ok
@@ -132,6 +149,7 @@ bool initUserInterface()
 
 	Interface = userInterface::Instance();
 	TwWindowSize(windowHeight, windowHeight);
+	initUserInterfaceValues();
 	return true;
 }
 /**
@@ -210,7 +228,6 @@ void initGL()
 
 void initMVP() 
 {
-	std::cout << "dsfsdfds: " << PointLight.getAmbientColor().x << std::endl;
 	Model = glm::mat4(1.0f);
 	View = Camara.getView();
 	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 190.0f);
@@ -225,9 +242,9 @@ void buildGeometry()
 {
 	std::vector< std::string > paths;
 	//Paths
+	paths.push_back(".\\assets\\models\\catS.obj");
 	paths.push_back(".\\assets\\models\\cubeS.obj");
 	paths.push_back(".\\assets\\models\\pokeballS.obj");
-	paths.push_back(".\\assets\\models\\catS.obj");
 	//paths.push_back(".\\assets\\models\\light1S.obj");
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
@@ -571,13 +588,14 @@ void renderDirLight()
 	shader->use();
 
 	//MVP trnasformations
-	updateMVP();
-	MVP = (Proj * View * Model);
-	shader->setMat4("MVP", MVP);
 
 	//Draw models of the scene
 	for (size_t i = 0; i < lightsObj.size(); i++)
 	{
+		updateMVP();
+		Model = glm::translate(glm::mat4(1.0f), PointLight.getLightPos());
+		MVP = (Proj * View * Model);
+		shader->setMat4("MVP", MVP);
 		//Material
 		shader->setVec3("ka", lightsObj[i].getKAmbient());
 		shader->setVec3("kd", lightsObj[i].getKDiffuse());
@@ -598,6 +616,39 @@ void renderDirLight()
 	}
 	glBindVertexArray(0);
 
+}
+
+
+void updateUserInterface() 
+{
+	//Model
+	int nMod = Interface->nModel;
+	if (modelAnt != nMod)
+	{
+		//Nueva selección 
+		//(actualizamos tweakbar con los atributos del modelo seleccionado)
+		Interface->ambientColorMtl = modelsObj[nMod].getKAmbient();
+		Interface->diffuseColorMtl = modelsObj[nMod].getKDiffuse();
+		Interface->specularColorMtl = modelsObj[nMod].getKSpecular();
+		Interface->shinniness = modelsObj[nMod].getShinniness();
+		Interface->roughness = modelsObj[nMod].getRoughness();
+		modelAnt = nMod;
+	}
+	modelsObj[nMod].setKAmbient(Interface->ambientColorMtl);
+	modelsObj[nMod].setKDiffuse(Interface->diffuseColorMtl);
+	modelsObj[nMod].setKSpecular(Interface->specularColorMtl);
+	modelsObj[nMod].setShinniness(Interface->shinniness);
+	modelsObj[nMod].setRoghness(Interface->roughness);
+	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
+
+	//Light dir
+	directionalLight.setLightDir(Interface->getLightDir());
+	directionalLight.setAmbientColor(Interface->ambientColor);
+	directionalLight.setDiffuseColor(Interface->diffuseColor);
+	directionalLight.setSpecularColor(Interface->specularColor);
+	directionalLight.setONOFF(Interface->onLightDir);
+
+	//std::cout << Interface->onLightDir << std::endl};
 }
 /**
  * Render Function
@@ -622,6 +673,9 @@ void render()
 	//tweakbar
 	TwDraw();
 
+	//Update
+	updateUserInterface();
+
     // Swap the buffer
     glfwSwapBuffers(window);
 }
@@ -639,6 +693,7 @@ void update()
         // Renders everything
         render();
 
+		
         // Check and call events
         glfwPollEvents();
     }

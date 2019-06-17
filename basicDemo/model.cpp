@@ -7,6 +7,7 @@ model::model()
 	kdif = glm::vec3(0.55);
 	kspec = glm::vec3(0.70);
 	shinniness = 32;
+	roughness = 32;
 }
 
 model::~model()

@@ -13,6 +13,7 @@ class model
 {
 
 public:
+	//string name;
 	std::vector<glm::vec3> vertex, normal, color;
 	std::vector<glm::vec2> uv;
 	// Index (GPU) of the geometry buffer

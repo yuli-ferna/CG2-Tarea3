@@ -62,9 +62,6 @@
     <ClInclude Include="camera.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="main.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="light.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>

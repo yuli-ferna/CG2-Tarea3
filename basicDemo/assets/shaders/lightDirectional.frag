@@ -13,6 +13,7 @@ uniform vec3 lightDir;
 uniform vec3 specularColor;
 uniform vec3 diffuseColor;
 uniform vec3 ambientColor;
+uniform bool on;
 
 //Material
 uniform vec3 ka;
@@ -33,10 +34,12 @@ void main()
     
     //Material with light components
     vec3 ambient  = ka * ambientColor;
-    vec3 diffuse  = kd * texture2D(text, texCoord) * max(0.0, dot(N, L));
+    vec3 diffuse  = kd * diffuseColor * texture2D(text, texCoord) * max(0.0, dot(N, L));
     vec3 specular = ks * specularColor * pow(max(0.0, dot(R, V)), n);
     color = vec4(ambient + diffuse + specular, 1.0f);
-    // color = vec4(ambient, 1.0f);
+    
+    if(!on)
+        color = vec4(ambient, 1.0f);
     //Texture
     // color = color * texture2D(text, texCoord);
     // color = vColor;
