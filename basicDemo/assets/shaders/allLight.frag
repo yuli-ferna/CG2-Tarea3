@@ -59,13 +59,13 @@ vec3 intensityPointLight(PointLight lightPoint, vec3 normal, vec3 fragPos, vec3 
     float distance    = length(lightPoint.position - fragPos);
     float attenuation = 1.0 / (lightPoint.attenuationK.x + lightPoint.attenuationK.y * distance + 
   			     lightPoint.attenuationK.z * (distance * distance));    
-     attenuation = 1.0 / (5 + 5 * distance + 
-  			     5 * (distance * distance));    
+     attenuation = 1.0 / (1 + 0.1f * distance + 
+  			     0.01f * (distance * distance));    
 
     // combine results
     vec3 ambient  = lightPoint.ambientColor ;
     vec3 diffuse  = vec3(0.75f, 0.0f, 0.0f)  * diff;
-    // vec3 diffuse  = lightPoint.diffuseColor  * diff * vec3(texture(diffuseColor, TexCoords));
+    // vec3 diffuse  = lightPoint.diffuseColor  * diff;
     vec3 specular = lightPoint.specularColor * spec;
     ambient  *= attenuation;
     diffuse  *= attenuation;
@@ -80,7 +80,8 @@ void main()
     vec3 ViewDir = normalize(viewVec);
     //Calculando intensidad de luz direccional
     vec3 intensity = intensiyLightDir(Normal, Light, ViewDir);
-    intensity += intensityPointLight(pointLights[0], Normal, -viewVec, ViewDir);
+    if(pointLights[0].on)
+        intensity += intensityPointLight(pointLights[0], Normal, -viewVec, ViewDir);
     color = vec4(intensity, 1.0f);
     
 

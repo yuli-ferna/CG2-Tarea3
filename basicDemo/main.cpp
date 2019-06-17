@@ -392,7 +392,7 @@ unsigned int loadTexture(const char *path)
 }
 void initLights() 
 {
-	pointLight light1(glm::vec3(5.0f, 0.0f, 5.0f));
+	pointLight light1(glm::vec3(1.0f, 0.0f, 1.0f));
 	pointLight light2(glm::vec3(5.0f, 0.0f, -5.0f));
 	PointLight.push_back(light1);
 	PointLight.push_back(light2);
