@@ -24,22 +24,32 @@ uniform float n1 = 50;
 // Fragment Color
 out vec4 color;
 
-void main()
+vec3 intensiyLightDir(vec3 Normal, vec3 Light, vec3 ViewDir)
 {
-    vec3 N = normalize(viewNorm);
-    vec3 L = normalize(lightDir);
-    vec3 V = normalize(viewVec);
-
-    vec3 R = reflect(-L, N);
+    vec3 R = reflect(-Light, Normal);
     
     //Material with light components
     vec3 ambient  = ka * ambientColor;
-    vec3 diffuse  = kd * diffuseColor * texture2D(text, texCoord) * max(0.0, dot(N, L));
-    vec3 specular = ks * specularColor * pow(max(0.0, dot(R, V)), n);
-    color = vec4(ambient + diffuse + specular, 1.0f);
+    vec3 diffuse  = kd * diffuseColor * texture2D(text, texCoord) * max(0.0, dot(Normal, Light));
+    vec3 specular = ks * specularColor * pow(max(0.0, dot(R, ViewDir)), n);
+
+    return ambient + diffuse + specular;
+}
+
+void main()
+{
+    vec3 Normal = normalize(viewNorm);
+    vec3 Light = normalize(lightDir);
+    vec3 ViewDir = normalize(viewVec);
+    vec3 intensity = intensiyLightDir(Normal, Light, ViewDir);
+    color = vec4(intensity, 1.0f);
     
     if(!on)
+    {
+        vec3 ambient  = ka * ambientColor;
         color = vec4(ambient, 1.0f);
+
+    }
     //Texture
     // color = color * texture2D(text, texCoord);
     // color = vColor;

@@ -16,6 +16,7 @@ uniform mat4 Proj;
 uniform vec3 lightDir;
 
 uniform vec3 lightPos;
+uniform vec3 lightPosPoint;
 
 out vec4 vColor;
 out vec2 texCoord;

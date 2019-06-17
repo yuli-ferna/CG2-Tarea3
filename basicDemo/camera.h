@@ -17,7 +17,6 @@ class camera
 	float keyboardSpeed = 0.5f;
 
 	//Keyboard
-	glm::vec3 worldUp;
 	glm::vec3 position;
 	glm::vec3 front;
 	glm::vec3 right;

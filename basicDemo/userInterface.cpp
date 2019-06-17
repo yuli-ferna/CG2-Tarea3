@@ -87,10 +87,10 @@ void userInterface::reshape()
 
 void userInterface::show()
 {
-	TwDefine("Obj visible = true");
+	TwDefine("Tarea visible = true");
 }
 
 void userInterface::hide()
 {
-	TwDefine("Obj visible = false");
+	TwDefine("Tarea visible = false");
 }
