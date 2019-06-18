@@ -1,4 +1,4 @@
-#define N_POINTLIGHTS 1
+#define N_POINTLIGHTS 2
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -59,7 +59,7 @@ userInterface *Interface;
 //Models
 model object;
 std::vector< model > modelsObj, lightsObj;
-int modelSelect, modelAnt;
+int lightAnt, modelAnt;
 /**
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -125,7 +125,7 @@ void initUserInterfaceValues()
 {
 	//Model
 	Interface->nModel = 0;
-	modelSelect = modelAnt = 0;
+	modelAnt = 0;
 	Interface->shinniness = 10;
 	Interface->roughness = 0;
 	Interface->ambientColorMtl = glm::vec3(0.10);
@@ -137,6 +137,15 @@ void initUserInterfaceValues()
 	Interface->diffuseColor = directionalLight.getDiffuseColor();
 	Interface->specularColor = directionalLight.getSpecularColor();
 	Interface->onLightDir = directionalLight.getONOFF();
+	// Point Light
+	Interface->nPointLight = 0;
+	lightAnt = 0;
+	Interface->onLightPoint = PointLight[0].getONOFF();
+	Interface->ambientColorPoint = PointLight[0].getAmbientColor();
+	Interface->diffuseColorPoint = PointLight[0].getDiffuseColor();
+	Interface->specularColorPoint = PointLight[0].getSpecularColor();
+	Interface->lightPointPos = PointLight[0].getLightPos();
+	Interface->lightAttPoint = PointLight[0].getKAttenuation();
 }
 /**
  * initialize the user interface
@@ -149,7 +158,7 @@ bool initUserInterface()
 
 	Interface = userInterface::Instance();
 	TwWindowSize(windowHeight, windowHeight);
-	initUserInterfaceValues();
+	//initUserInterfaceValues();
 	return true;
 }
 /**
@@ -393,7 +402,10 @@ unsigned int loadTexture(const char *path)
 void initLights() 
 {
 	pointLight light1(glm::vec3(1.0f, 0.0f, 1.0f));
-	pointLight light2(glm::vec3(5.0f, 0.0f, -5.0f));
+	light1.setDiffuseColor(glm::vec3(0.75f, 0.0f, 0.0f));
+	pointLight light2(glm::vec3(2.0f, 0.0f, -2.0f));
+	light2.setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.0f));
+
 	PointLight.push_back(light1);
 	PointLight.push_back(light2);
 }
@@ -421,13 +433,16 @@ bool init()
     buildGeometry();
     
 	// Loads the texture into the GPU
-    textureID = loadTexture("assets/textures/Neji.jpg");
+    textureID = loadTexture("assets/textures/bricks2.jpg");
 
 	//Initializate MVP values
 	initMVP();
 	
 	//Initializate lights
 	initLights();
+
+	//Init values of tweakbar
+	initUserInterfaceValues();
 
     return true;
 }
@@ -586,6 +601,13 @@ void renderDirLight()
 	shaderAllLight->setVec3("pointLights[0].attenuationK", PointLight[0].getKAttenuation());
 	shaderAllLight->setBool("pointLights[0].on", PointLight[0].getONOFF());
 
+	shaderAllLight->setVec3("pointLights[1].position", PointLight[1].getLightPos());
+	shaderAllLight->setVec3("pointLights[1].ambientColor", PointLight[1].getAmbientColor());
+	shaderAllLight->setVec3("pointLights[1].diffuseColor", PointLight[1].getDiffuseColor());
+	shaderAllLight->setVec3("pointLights[1].specularColor", PointLight[1].getSpecularColor());
+	shaderAllLight->setVec3("pointLights[1].attenuationK", PointLight[1].getKAttenuation());
+	shaderAllLight->setBool("pointLights[1].on", PointLight[1].getONOFF());
+
 	//Draw models of the scene
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
@@ -675,6 +697,26 @@ void updateUserInterface()
 	directionalLight.setONOFF(Interface->onLightDir);
 
 	//Point lights
+	int nLight = Interface->nPointLight;
+
+	if (lightAnt != nLight)
+	{
+		Interface->onLightPoint = PointLight[nLight].getONOFF();
+		Interface->ambientColorPoint = PointLight[nLight].getAmbientColor();
+		Interface->diffuseColorPoint = PointLight[nLight].getDiffuseColor();
+		Interface->specularColorPoint = PointLight[nLight].getSpecularColor();
+		Interface->lightPointPos = PointLight[nLight].getLightPos();
+		Interface->lightAttPoint = PointLight[nLight].getKAttenuation();
+		lightAnt = nLight;
+	}
+
+	PointLight[nLight].setLightPos(Interface->lightPointPos);
+	PointLight[nLight].setONOFF(Interface->onLightPoint);
+	PointLight[nLight].setAmbientColor(Interface->ambientColorPoint);
+	PointLight[nLight].setDiffuseColor(Interface->diffuseColorPoint);
+	PointLight[nLight].setSpecularColor(Interface->specularColorPoint);
+	PointLight[nLight].setKAttenuation(Interface->lightAttPoint);
+
 
 	//std::cout << Interface->onLightDir << std::endl};
 }

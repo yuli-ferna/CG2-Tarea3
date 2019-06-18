@@ -52,7 +52,20 @@ userInterface::userInterface()
 	TwAddVarRW(mUserInterface, "diffuseColorDir", TW_TYPE_COLOR3F, &diffuseColor,"label='Diffuse Color' group='DirectionalLigth'");
 	TwAddVarRW(mUserInterface, "specularColorDir", TW_TYPE_COLOR3F, &specularColor, "label='Specular Color' group='DirectionalLigth'");
 	//TwDefine("Tarea/DirectionalLigth label='Directional Ligth'");
-
+	TwAddSeparator(mUserInterface, "sep2", NULL);
+	TwAddVarRW(mUserInterface, "nLightPoint", TW_TYPE_UINT32, &nPointLight, " group='PointLight' min=0 label='Select light' step=1 max=1 ");
+	TwAddVarRW(mUserInterface, "ON/OFF 2", TW_TYPE_BOOLCPP, &onLightPoint, "label='ON/OFF' group='PointLight'");
+	TwAddVarRW(mUserInterface, "LigthPX", TW_TYPE_FLOAT, &lightPointPos[0], " group='DirectionLigthPoint' step=0.01 ");
+	TwAddVarRW(mUserInterface, "LigthPY", TW_TYPE_FLOAT, &lightPointPos[1], " group='DirectionLigthPoint' step=0.01 ");
+	TwAddVarRW(mUserInterface, "LigthPZ", TW_TYPE_FLOAT, &lightPointPos[2], " group='DirectionLigthPoint' step=0.01 ");
+	TwDefine("Tarea/DirectionLigthPoint group='PointLight' label='Position'");
+	TwAddVarRW(mUserInterface, "ambientalColorPoint", TW_TYPE_COLOR3F, &ambientColorPoint, "label='Ambiental Color' group='PointLight'");
+	TwAddVarRW(mUserInterface, "diffuseColorPoint", TW_TYPE_COLOR3F, &diffuseColorPoint, "label='Diffuse Color' group='PointLight'");
+	TwAddVarRW(mUserInterface, "specularColorPoint", TW_TYPE_COLOR3F, &specularColorPoint, "label='Specular Color' group='PointLight'");
+	TwAddVarRW(mUserInterface, "AttenPointX", TW_TYPE_FLOAT, &lightAttPoint[0], " group='AttenuantionLigth' step=0.01 ");
+	TwAddVarRW(mUserInterface, "AttenPointY", TW_TYPE_FLOAT, &lightAttPoint[1], " group='AttenuantionLigth' step=0.01 ");
+	TwAddVarRW(mUserInterface, "AttenPointZ", TW_TYPE_FLOAT, &lightAttPoint[2], " group='AttenuantionLigth' step=0.01 ");
+	TwDefine("Tarea/AttenuantionLigth group='PointLight' label='Attenuation'");
 
 }
 
