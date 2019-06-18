@@ -23,16 +23,17 @@ out vec2 texCoord;
 
 out vec3 viewNorm;
 out vec3 viewVec;
+out vec3 lightDir1;
 
 void main()
 {
 
     vec4 fragPos = View * Model * vec4(vertexPosition, 1.0f);
-
+    
     viewNorm = (mat3(View * Model) * vertexNormal);
     
     viewVec = ( - fragPos.xyz);
- 
+    lightDir1 = normalize(lightPos - fragPos.xyz);
     texCoord = vertexTextureCoord;
     gl_Position = MVP * (vec4(vertexPosition, 1.0f));
 }

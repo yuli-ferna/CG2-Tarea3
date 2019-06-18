@@ -4,6 +4,7 @@ in vec3 viewNorm;
 in vec3 viewVec;
 in vec4 vColor;
 in vec2 texCoord;
+in vec3 lightDir1;
 
 //Texture
 uniform sampler2D text;
@@ -14,6 +15,7 @@ uniform vec3 specularColor;
 uniform vec3 diffuseColor;
 uniform vec3 ambientColor;
 uniform bool on;
+uniform int Mtl;
 
 //Point Light
 struct PointLight {    
@@ -27,17 +29,17 @@ struct PointLight {
 uniform PointLight pointLights[2];
 
 // //Point Light
-// struct SpotLight {    
-//     vec3 position;
-//     vec3 attenuationK; // k0 = att.x k1 = att.y k2= att.z
-//     vec3 ambientColor;
-//     vec3 diffuseColor;
-//     vec3 specularColor;
-//     float cuttof;
-// 	float outerCuttof;
-//     bool on;
-// };    
-// uniform SpotLight spotLight;
+struct SpotLight {    
+    vec3 position;
+    vec3 attenuationK; // k0 = att.x k1 = att.y k2= att.z
+    vec3 ambientColor;
+    vec3 diffuseColor;
+    vec3 specularColor;
+    float cuttof;
+	float outerCuttof;
+    bool on;
+};    
+uniform SpotLight spotLight;
 
 
 //Material
@@ -52,12 +54,19 @@ out vec4 color;
 
 vec3 intensiyLightDir(vec3 Normal, vec3 Light, vec3 ViewDir)
 {
-    vec3 R = reflect(-Light, Normal);
-    
+    vec3 R = reflect(-Light, Normal );
+    //blinn phon
+    vec3 halfwayDir = normalize(Light + ViewDir);
     //Material with light components
     vec3 ambient  = ka * ambientColor;
     vec3 diffuse  = kd * diffuseColor * texture2D(text, texCoord) * max(0.0, dot(Normal, Light));
-    vec3 specular = ks * specularColor * pow(max(0.0, dot(R, ViewDir)), n);
+    //blinn phon specular
+    vec3 specular;
+    if(Mtl != 0){
+        specular = ks * specularColor * pow(max(0.0, dot(Normal, halfwayDir)), n);
+    }else{
+        specular = vec3(0.0f);
+    }
 
     return ambient + diffuse + specular;
 }
@@ -65,9 +74,8 @@ vec3 intensiyLightDir(vec3 Normal, vec3 Light, vec3 ViewDir)
 vec3 intensityPointLight(PointLight lightPoint, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
     vec3 lightDir = normalize(lightPoint.position - fragPos);
-    vec3 R = reflect(-lightDir, normal);
+    vec3 R = reflect(-lightDir, normal );
     float diff = max(dot(normal, lightDir), 0.0);
-    float spec = pow(max(dot(viewDir, R), 0.0), n);
     float distance    = length(lightPoint.position - fragPos);
     float attenuation = 1.0 / (lightPoint.attenuationK.x + lightPoint.attenuationK.y * distance + 
   			     lightPoint.attenuationK.z * (distance * distance));     
@@ -75,16 +83,26 @@ vec3 intensityPointLight(PointLight lightPoint, vec3 normal, vec3 fragPos, vec3 
     vec3 ambient  = lightPoint.ambientColor ;
     vec3 diffuse  = lightPoint.diffuseColor * diff * texture2D(text, texCoord);
     // vec3 diffuse  = lightPoint.diffuseColor  * diff;
-    vec3 specular = lightPoint.specularColor * spec;
     ambient  *= attenuation;
+    vec3 specular;
+    float spec;
+    if(Mtl != 0)
+    {
+        spec = pow(max(dot(viewDir, R), 0.0), n);
+        specular = lightPoint.specularColor * spec;
+        specular *= attenuation;
+    }else{
+        specular = vec3(0.0f);
+    }
+
     diffuse  *= attenuation;
-    specular *= attenuation;
+
     return (ambient + diffuse + specular);
 } 
 
 // vec3 intensitySpotLight(SpotLight spot, vec3 Normal, vec3 viewDir)
 // {
-
+//     
 // }
 
 void main()
@@ -103,14 +121,6 @@ void main()
     
     color = vec4(intensity, 1.0f);
     
-
-    //Apagada luz direccional
-    // if(!on)
-    // {
-    //     vec3 ambient  = ka * ambientColor;
-    //     color = vec4(ambient, 1.0f);
-
-    // }
     //Texture
     // color = color * texture2D(text, texCoord);
     // color = vColor;
