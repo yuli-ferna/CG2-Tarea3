@@ -27,8 +27,8 @@ out vec3 lightDir1;
 
 void main()
 {
-
-    vec4 fragPos = View * Model * vec4(vertexPosition, 1.0f);
+    //ver fragpos
+    vec4 fragPos =/* View **/ Model * vec4(vertexPosition, 1.0f);
     
     viewNorm = (mat3(View * Model) * vertexNormal);
     

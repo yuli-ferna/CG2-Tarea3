@@ -255,6 +255,8 @@ void buildGeometry()
 	paths.push_back(".\\assets\\models\\catS.obj");
 	paths.push_back(".\\assets\\models\\cubeS.obj");
 	paths.push_back(".\\assets\\models\\pokeballS.obj");
+	paths.push_back(".\\assets\\models\\planeS.obj");
+
 	//paths.push_back(".\\assets\\models\\light1S.obj");
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
@@ -402,7 +404,7 @@ unsigned int loadTexture(const char *path)
 }
 void initLights() 
 {
-	pointLight light1(glm::vec3(1.0f, 0.0f, 1.0f));
+	pointLight light1(glm::vec3(0.0f, 0.0f, 0.0f));
 	light1.setDiffuseColor(glm::vec3(0.75f, 0.0f, 0.0f));
 	pointLight light2(glm::vec3(2.0f, 0.0f, -2.0f));
 	light2.setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.0f));
@@ -567,7 +569,7 @@ void renderDirLight()
 
 	//Light directional
 	shaderAllLight->setVec3("viewPos", Camara->getPosition());
-	glm::vec3 lightD = glm::vec3(Model * View * glm::vec4(directionalLight.getLightDir(), 0));
+	glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight.getLightDir(), 0));
 	shaderAllLight->setVec3("lightDir", lightD);
 	shaderAllLight->setVec3("lightPos", directionalLight.getLightPos());
 	shaderAllLight->setVec3("ambientColor", directionalLight.getAmbientColor());

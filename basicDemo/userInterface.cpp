@@ -62,10 +62,22 @@ userInterface::userInterface()
 	TwAddVarRW(mUserInterface, "ambientalColorPoint", TW_TYPE_COLOR3F, &ambientColorPoint, "label='Ambiental Color' group='PointLight'");
 	TwAddVarRW(mUserInterface, "diffuseColorPoint", TW_TYPE_COLOR3F, &diffuseColorPoint, "label='Diffuse Color' group='PointLight'");
 	TwAddVarRW(mUserInterface, "specularColorPoint", TW_TYPE_COLOR3F, &specularColorPoint, "label='Specular Color' group='PointLight'");
-	TwAddVarRW(mUserInterface, "AttenPointX", TW_TYPE_FLOAT, &lightAttPoint[0], " group='AttenuantionLigth' step=0.01 ");
-	TwAddVarRW(mUserInterface, "AttenPointY", TW_TYPE_FLOAT, &lightAttPoint[1], " group='AttenuantionLigth' step=0.01 ");
-	TwAddVarRW(mUserInterface, "AttenPointZ", TW_TYPE_FLOAT, &lightAttPoint[2], " group='AttenuantionLigth' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Constant", TW_TYPE_FLOAT, &lightAttPoint[0], " group='AttenuantionLigth' label = 'Constant' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Linear", TW_TYPE_FLOAT, &lightAttPoint[1], " group='AttenuantionLigth' label = 'Lineal' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Quadratic", TW_TYPE_FLOAT, &lightAttPoint[2], " group='AttenuantionLigth' label = 'Quadratic' step=0.01 ");
 	TwDefine("Tarea/AttenuantionLigth group='PointLight' label='Attenuation'");
+	//Spot light
+	TwAddSeparator(mUserInterface, "sep3", NULL);
+	TwAddVarRW(mUserInterface, "ON/OFF 3", TW_TYPE_BOOLCPP, &onLightSpot, "label='ON/OFF' group='SpotLight'");
+	TwAddVarRW(mUserInterface, "ambientalColorSpot", TW_TYPE_COLOR3F, &ambientColorSpot, "label='Ambiental Color' group='SpotLight'");
+	TwAddVarRW(mUserInterface, "diffuseColorSpot", TW_TYPE_COLOR3F, &diffuseColorSpot, "label='Diffuse Color' group='SpotLight'");
+	TwAddVarRW(mUserInterface, "specularColorSpot", TW_TYPE_COLOR3F, &specularColorSpot, "label='Specular Color' group='SpotLight'");
+	TwAddVarRW(mUserInterface, "Constant1", TW_TYPE_FLOAT, &lightAttSpot[0], " group='AttenuantionLigthPoint' label = 'Constant' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Linear1", TW_TYPE_FLOAT, &lightAttSpot[1], " group='AttenuantionLigthPoint' label = 'Lineal' step=0.01 ");
+	TwAddVarRW(mUserInterface, "Quadratic1", TW_TYPE_FLOAT, &lightAttSpot[2], " group='AttenuantionLigthPoint' label = 'Quadratic' step=0.01 ");
+	TwDefine("Tarea/AttenuantionLigthPoint group='SpotLight' label='Attenuation'");
+	TwAddVarRW(mUserInterface, "cuttof", TW_TYPE_FLOAT, &cuttof, " group='SpotLight' step=0.01 ");
+	TwAddVarRW(mUserInterface, "outerCuttof", TW_TYPE_FLOAT, &outerCuttof, " group='SpotLight' step=0.01 ");
 
 }
 

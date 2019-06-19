@@ -43,6 +43,15 @@ public:
 	glm::vec3 diffuseColorPoint;
 	glm::vec3 specularColorPoint;
 
+	//Spot Light
+	bool onLightSpot;
+	glm::vec3 lightAttSpot;
+	glm::vec3 ambientColorSpot;
+	glm::vec3 diffuseColorSpot;
+	glm::vec3 specularColorSpot;
+	float cuttof;
+	float outerCuttof;
+
 private:
 	userInterface();
 };
