@@ -30,7 +30,7 @@ void main()
     //ver fragpos
     vec4 fragPos =/* View **/ Model * vec4(vertexPosition, 1.0f);
     
-    viewNorm = (mat3(View * Model) * vertexNormal);
+    viewNorm = (/*mat3(View * Model) **/ vertexNormal);
     
     viewVec = ( - fragPos.xyz);
     lightDir1 = normalize(lightPos - fragPos.xyz);

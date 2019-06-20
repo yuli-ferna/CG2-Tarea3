@@ -15,7 +15,7 @@ model::~model()
 
 }
 
-model model::loadObj(std::string path)
+model* model::loadObj(std::string path)
 {
 	std::ifstream file = std::ifstream(path);
 	if (!file.is_open()) {
@@ -96,16 +96,16 @@ model model::loadObj(std::string path)
 
 	}
 
-	model a;
+	model *a = new model();
 	//Creando el arreglo final
 	std::vector< glm::vec3 > Vert;
 	std::vector< glm::vec3 > Normal;
 	std::vector< glm::vec2 > UV;
 	for (int i = 0; i < vertInd.size(); i++)
 	{
-		a.vertex.push_back(glm::vec3(allVert[vertInd[i]]));
-		a.uv.push_back(allUV[uvInd[i]]);
-		a.normal.push_back(glm::vec3(allNormal[normInd[i]]));
+		a->vertex.push_back(glm::vec3(allVert[vertInd[i]]));
+		a->uv.push_back(allUV[uvInd[i]]);
+		a->normal.push_back(glm::vec3(allNormal[normInd[i]]));
 	}
 
 	return a;

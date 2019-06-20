@@ -49,18 +49,18 @@ float speedMouse = Camara->getSpeedMouse();
 //Lights
 enum modeLight {dir, point};
 modeLight mode = dir;
-light directionalLight(glm::vec3(0.0f, 5.0f, 5.0f));
-std::vector < pointLight > PointLight;
-spotLight SpotLight(Camara->getPosition());
+light* directionalLight = new light(glm::vec3(0.0f, 5.0f, 5.0f));
+std::vector < pointLight* > PointLight;
+spotLight* SpotLight = new spotLight(Camara->getPosition());
 
 //tweakBar
 userInterface *Interface;
 
 //Models
-model object;
-std::vector< model > modelsObj, lightsObj;
+model *object;
+std::vector< model* > modelsObj, lightsObj;
 int lightAnt, modelAnt;
-/**
+/* *
  * Handles the window resize
  * @param{GLFWwindow} window pointer
  * @param{int} new width of the window
@@ -90,7 +90,40 @@ void onResizeWindow(GLFWwindow* window, int width, int height) {
  * Calback key press
  * */
 void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (action == GLFW_PRESS) TwKeyPressed(key, TW_KMOD_NONE);
+	/*if (action == GLFW_PRESS)
+	{
+		TwKeyPressed(key, TW_KMOD_NONE);
+		return;
+	}*/
+	//Important!
+	if (TwEventKeyGLFW(key, action))
+		return;
+
+	if (action == GLFW_PRESS)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GL_TRUE);
+			break;
+		case GLFW_KEY_C:
+			//Changes camera mode
+			if (!Camara->getCameraMode())
+			{
+				//cameraMode = true;
+				Interface->hide();
+			}
+			else {
+				//cameraMode = false;
+				Interface->show();
+
+			}
+			Camara->changeCameraMode();
+			//cameraMode = !cameraMode;
+			break;
+
+		}
+	}
 
 }
 
@@ -119,6 +152,7 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 }
 void onCharacter(GLFWwindow* window, unsigned int codepoint) {
 	TwKeyPressed(codepoint, TW_KMOD_NONE);
+
 }
 
 void initUserInterfaceValues()
@@ -126,26 +160,26 @@ void initUserInterfaceValues()
 	//Model
 	Interface->nModel = 0;
 	modelAnt = 0;
-	Interface->shinniness = modelsObj[0].getShinniness();
-	Interface->roughness = modelsObj[0].getRoughness();
-	Interface->ambientColorMtl = modelsObj[0].getKAmbient();
-	Interface->diffuseColorMtl = modelsObj[0].getKDiffuse();
-	Interface->specularColorMtl = modelsObj[0].getKSpecular();
+	Interface->shinniness = modelsObj[0]->getShinniness();
+	Interface->roughness = modelsObj[0]->getRoughness();
+	Interface->ambientColorMtl = modelsObj[0]->getKAmbient();
+	Interface->diffuseColorMtl = modelsObj[0]->getKDiffuse();
+	Interface->specularColorMtl = modelsObj[0]->getKSpecular();
 	//Light direction
-	Interface->setLightDir(directionalLight.getLightDir());
-	Interface->ambientColor = directionalLight.getAmbientColor();
-	Interface->diffuseColor = directionalLight.getDiffuseColor();
-	Interface->specularColor = directionalLight.getSpecularColor();
-	Interface->onLightDir = directionalLight.getONOFF();
+	Interface->lightDir = (directionalLight->getLightDir());
+	Interface->ambientColor = directionalLight->getAmbientColor();
+	Interface->diffuseColor = directionalLight->getDiffuseColor();
+	Interface->specularColor = directionalLight->getSpecularColor();
+	Interface->onLightDir = directionalLight->getONOFF();
 	// Point Light
 	Interface->nPointLight = 0;
 	lightAnt = 0;
-	Interface->onLightPoint = PointLight[0].getONOFF();
-	Interface->ambientColorPoint = PointLight[0].getAmbientColor();
-	Interface->diffuseColorPoint = PointLight[0].getDiffuseColor();
-	Interface->specularColorPoint = PointLight[0].getSpecularColor();
-	Interface->lightPointPos = PointLight[0].getLightPos();
-	Interface->lightAttPoint = PointLight[0].getKAttenuation();
+	Interface->onLightPoint = PointLight[0]->getONOFF();
+	Interface->ambientColorPoint = PointLight[0]->getAmbientColor();
+	Interface->diffuseColorPoint = PointLight[0]->getDiffuseColor();
+	Interface->specularColorPoint = PointLight[0]->getSpecularColor();
+	Interface->lightPointPos = PointLight[0]->getLightPos();
+	Interface->lightAttPoint = PointLight[0]->getKAttenuation();
 	//
 }
 /**
@@ -157,7 +191,7 @@ bool initUserInterface()
 	if (!TwInit(TW_OPENGL_CORE, NULL))
 		return false;
 
-	Interface = userInterface::Instance();
+	Interface = new userInterface();
 	TwWindowSize(windowHeight, windowHeight);
 	//initUserInterfaceValues();
 	return true;
@@ -261,40 +295,40 @@ void buildGeometry()
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
 	{
-		object = object.loadObj(paths[i]);
+		object = object->loadObj(paths[i]);
 
 		// Creates on GPU the vertex array
-		glGenVertexArrays(1, &object.VAO[0]);
+		glGenVertexArrays(1, &object->VAO[0]);
 		// Creates on GPU the vertex buffer object
-		glGenBuffers(3, object.VBO);
+		glGenBuffers(3, object->VBO);
 		// Binds the vertex array to set all the its properties
-		glBindVertexArray(object.VAO[0]);
+		glBindVertexArray(object->VAO[0]);
 
-		//vexter position object.VBO
+		//vexter position object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[0]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
-		//vertex position position object.VAO
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
+		//vertex position position object->VAO
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 	
-		//uv object.VBO
+		//uv object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
 
-		//uv object.VAO
+		//uv object->VAO
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		//glBindVertexArray(0);
-		//color object.VBO
+		//color object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[2]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
 
-		//color object.VAO
+		//color object->VAO
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
@@ -305,38 +339,38 @@ void buildGeometry()
 	//Load Lights
 	for (size_t i = 0; i < N_POINTLIGHTS; i++)
 	{
-		object = object.loadObj(".\\assets\\models\\light1S.obj");
+		object = object->loadObj(".\\assets\\models\\light1S.obj");
 
 		// Creates on GPU the vertex array
-		glGenVertexArrays(1, &object.VAO[0]);
+		glGenVertexArrays(1, &object->VAO[0]);
 		// Creates on GPU the vertex buffer object
-		glGenBuffers(3, object.VBO);
+		glGenBuffers(3, object->VBO);
 		// Binds the vertex array to set all the its properties
-		glBindVertexArray(object.VAO[0]);
+		glBindVertexArray(object->VAO[0]);
 
-		//vexter position object.VBO
+		//vexter position object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[0]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.vertex.size(), &object.vertex[0], GL_STATIC_DRAW);
-		//vertex position position object.VAO
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
+		//vertex position position object->VAO
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-		//uv object.VBO
+		//uv object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object.uv.size(), &object.uv[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
 
-		//uv object.VAO
+		//uv object->VAO
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		//glBindVertexArray(0);
-		//color object.VBO
+		//color object->VBO
 		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object.VBO[2]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object.normal.size(), &object.normal[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
 
 		//color object.VAO
 		// Sets the vertex attributes
@@ -404,10 +438,10 @@ unsigned int loadTexture(const char *path)
 }
 void initLights() 
 {
-	pointLight light1(glm::vec3(0.0f, 0.0f, 0.0f));
-	light1.setDiffuseColor(glm::vec3(0.75f, 0.0f, 0.0f));
-	pointLight light2(glm::vec3(2.0f, 0.0f, -2.0f));
-	light2.setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.0f));
+	pointLight *light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
+	light1->setDiffuseColor(glm::vec3(0.75f, 0.0f, 0.0f));
+	pointLight *light2 = new pointLight(glm::vec3(2.0f, 0.0f, -2.0f));
+	light2->setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.0f));
 
 	PointLight.push_back(light1);
 	PointLight.push_back(light2);
@@ -430,7 +464,8 @@ bool init()
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 	shaderAllLightCookTorence = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 	shaderAllLightOrenNayer = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
-	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+	//shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+	shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     // Loads all the geometry into the GPU
     buildGeometry();
@@ -473,27 +508,11 @@ void processKeyboardInput(GLFWwindow *window)
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		shaderAllLightCookTorence = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 		shaderAllLightOrenNayer = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
-		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+		//shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+		shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     }
-	// Checks if the c key is pressed
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-	{
-		//Changes camera mode
-		if (!Camara->getCameraMode())
-		{
-			//cameraMode = true;
-			Interface->hide();
-		}
-		else {
-			//cameraMode = false;
-			Interface->show();
-
-		}
-		Camara->changeCameraMode();
-		//cameraMode = !cameraMode;
-	}
-
+	
 	//Move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		Camara->updateInputKeyboard('w');
@@ -507,15 +526,8 @@ void processKeyboardInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		Camara->updateInputKeyboard('d');
 	
-	//if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-	//	directionalLight.leftLightDir();
-	//
-	//if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-	//	directionalLight.rightLightDir();
-
 	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-		directionalLight.changeONOFF();
-
+		directionalLight->changeONOFF();
 
 }
 
@@ -529,7 +541,7 @@ void updateMVP()
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
 
-void renderDirLight() 
+void renderDirLight(Shader* shaderAllLight)
 {
 	glm::mat4 MVP;
 	//Draw models of the scene
@@ -549,10 +561,10 @@ void renderDirLight()
 		//std::cout << Camara->getPosition().x << ' ' << Camara->getPosition().y << ' ' << Camara->getPosition().z << std::endl;
 	
 		//Material
-		shaderAllLight->setVec3("ka", modelsObj[i].getKAmbient());
-		shaderAllLight->setVec3("kd", modelsObj[i].getKDiffuse());
-		shaderAllLight->setVec3("ks", modelsObj[i].getKSpecular());
-		shaderAllLight->setFloat("n", modelsObj[i].getShinniness());
+		shaderAllLight->setVec3("ka", modelsObj[i]->getKAmbient());
+		shaderAllLight->setVec3("kd", modelsObj[i]->getKDiffuse());
+		shaderAllLight->setVec3("ks", modelsObj[i]->getKSpecular());
+		shaderAllLight->setFloat("n", modelsObj[i]->getShinniness());
 
 		//Texture
 		glActiveTexture(GL_TEXTURE0);
@@ -560,48 +572,49 @@ void renderDirLight()
 		shaderAllLight->setInt("text", 0);
 
 		// Binds the vertex array to be drawn
-		glBindVertexArray(modelsObj[i].VAO[0]);
+		glBindVertexArray(modelsObj[i]->VAO[0]);
     
 		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i].vertex.size());
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->vertex.size());
 		
 	}
 
 	//Light directional
 	shaderAllLight->setVec3("viewPos", Camara->getPosition());
-	glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight.getLightDir(), 0));
-	shaderAllLight->setVec3("lightDir", lightD);
-	shaderAllLight->setVec3("lightPos", directionalLight.getLightPos());
-	shaderAllLight->setVec3("ambientColor", directionalLight.getAmbientColor());
-	shaderAllLight->setVec3("diffuseColor", directionalLight.getDiffuseColor());
-	shaderAllLight->setVec3("specularColor", directionalLight.getSpecularColor());
-	shaderAllLight->setBool("on", directionalLight.getONOFF());
+	//glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight->getLightDir(), 0));
+	shaderAllLight->setVec3("lightDir", directionalLight->getLightDir());
+	shaderAllLight->setVec3("lightPos", directionalLight->getLightPos());
+	shaderAllLight->setVec3("ambientColor", directionalLight->getAmbientColor());
+	shaderAllLight->setVec3("diffuseColor", directionalLight->getDiffuseColor());
+	shaderAllLight->setVec3("specularColor", directionalLight->getSpecularColor());
+	shaderAllLight->setBool("on", directionalLight->getONOFF());
 
 	//Point Light
-	shaderAllLight->setVec3("pointLights[0].position", PointLight[0].getLightPos());
-	shaderAllLight->setVec3("pointLights[0].ambientColor", PointLight[0].getAmbientColor());
-	shaderAllLight->setVec3("pointLights[0].diffuseColor", PointLight[0].getDiffuseColor());
-	shaderAllLight->setVec3("pointLights[0].specularColor", PointLight[0].getSpecularColor());
-	shaderAllLight->setVec3("pointLights[0].attenuationK", PointLight[0].getKAttenuation());
-	shaderAllLight->setBool("pointLights[0].on", PointLight[0].getONOFF());
 
-	shaderAllLight->setVec3("pointLights[1].position", PointLight[1].getLightPos());
-	shaderAllLight->setVec3("pointLights[1].ambientColor", PointLight[1].getAmbientColor());
-	shaderAllLight->setVec3("pointLights[1].diffuseColor", PointLight[1].getDiffuseColor());
-	shaderAllLight->setVec3("pointLights[1].specularColor", PointLight[1].getSpecularColor());
-	shaderAllLight->setVec3("pointLights[1].attenuationK", PointLight[1].getKAttenuation());
-	shaderAllLight->setBool("pointLights[1].on", PointLight[1].getONOFF());
-	
+	for (int i = 0; i < N_POINTLIGHTS; i++)
+	{
+		std::string it = std::to_string(i);
+		shaderAllLight->setVec3("pointLights["+ it +"].position", PointLight[i]->getLightPos());
+		shaderAllLight->setVec3("pointLights["+ it +"].ambientColor", PointLight[i]->getAmbientColor());
+		shaderAllLight->setVec3("pointLights["+ it +"].diffuseColor", PointLight[i]->getDiffuseColor());
+		shaderAllLight->setVec3("pointLights["+ it +"].specularColor", PointLight[i]->getSpecularColor());
+		shaderAllLight->setVec3("pointLights["+ it +"].attenuationK", PointLight[i]->getKAttenuation());
+		shaderAllLight->setBool("pointLights["+ it +"].on", PointLight[i]->getONOFF());
+	}
+
+	//Spot Light
 	shaderAllLight->setVec3("SpotLight.position", Camara->getPosition());
-	shaderAllLight->setVec3("SpotLight.ambientColor", SpotLight.getAmbientColor());
-	shaderAllLight->setVec3("SpotLight.diffuseColor", SpotLight.getDiffuseColor());
-	shaderAllLight->setVec3("SpotLight.specularColor", SpotLight.getSpecularColor());
-	shaderAllLight->setVec3("SpotLight.attenuationK", SpotLight.getKAttenuation());
-	shaderAllLight->setFloat("SpotLight.cuttof", SpotLight.getCuttof());
-	shaderAllLight->setFloat("SpotLight.outerCuttof", SpotLight.getOuterCuttof());
-	shaderAllLight->setBool("SpotLight.on", SpotLight.getONOFF());
+	shaderAllLight->setVec3("SpotLight.ambientColor", SpotLight->getAmbientColor());
+	shaderAllLight->setVec3("SpotLight.diffuseColor", SpotLight->getDiffuseColor());
+	shaderAllLight->setVec3("SpotLight.specularColor", SpotLight->getSpecularColor());
+	shaderAllLight->setVec3("SpotLight.attenuationK", SpotLight->getKAttenuation());
+	shaderAllLight->setFloat("SpotLight.cuttof", SpotLight->getCuttof());
+	shaderAllLight->setFloat("SpotLight.outerCuttof", SpotLight->getOuterCuttof());
+	shaderAllLight->setBool("SpotLight.on", SpotLight->getONOFF());
 
 	glBindVertexArray(0);
+
+	
 	//Light models
 	// Use the shader
 	shader->use();
@@ -612,25 +625,25 @@ void renderDirLight()
 	for (size_t i = 0; i < lightsObj.size(); i++)
 	{
 		updateMVP();
-		Model = glm::translate(glm::mat4(1.0f), PointLight[i].getLightPos());
+		Model = glm::translate(glm::mat4(1.0f), PointLight[i]->getLightPos());
 		MVP = (Proj * View * Model);
 		shader->setMat4("MVP", MVP);
 		//Material
-		shader->setVec3("ka", lightsObj[i].getKAmbient());
-		shader->setVec3("kd", lightsObj[i].getKDiffuse());
-		shader->setVec3("ks", lightsObj[i].getKSpecular());
-		shader->setFloat("n", lightsObj[i].getShinniness());
-		shader->setVec3("lColor", PointLight[i].getDiffuseColor());
+		shader->setVec3("ka", lightsObj[i]->getKAmbient());
+		shader->setVec3("kd", lightsObj[i]->getKDiffuse());
+		shader->setVec3("ks", lightsObj[i]->getKSpecular());
+		shader->setFloat("n", lightsObj[i]->getShinniness());
+		shader->setVec3("lColor", PointLight[i]->getDiffuseColor());
 		//Texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		shader->setInt("text", 0);
 
 		// Binds the vertex array to be drawn
-		glBindVertexArray(lightsObj[i].VAO[0]);
+		glBindVertexArray(lightsObj[i]->VAO[0]);
 
 		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, lightsObj[i].vertex.size());
+		glDrawArrays(GL_TRIANGLES, 0, lightsObj[i]->vertex.size());
 
 	}
 	glBindVertexArray(0);
@@ -646,47 +659,47 @@ void updateUserInterface()
 	{
 		//Nueva selección 
 		//(actualizamos tweakbar con los atributos del modelo seleccionado)
-		Interface->ambientColorMtl = modelsObj[nMod].getKAmbient();
-		Interface->diffuseColorMtl = modelsObj[nMod].getKDiffuse();
-		Interface->specularColorMtl = modelsObj[nMod].getKSpecular();
-		Interface->shinniness = modelsObj[nMod].getShinniness();
-		Interface->roughness = modelsObj[nMod].getRoughness();
+		Interface->ambientColorMtl = modelsObj[nMod]->getKAmbient();
+		Interface->diffuseColorMtl = modelsObj[nMod]->getKDiffuse();
+		Interface->specularColorMtl = modelsObj[nMod]->getKSpecular();
+		Interface->shinniness = modelsObj[nMod]->getShinniness();
+		Interface->roughness = modelsObj[nMod]->getRoughness();
 		modelAnt = nMod;
 	}
-	modelsObj[nMod].setKAmbient(Interface->ambientColorMtl);
-	modelsObj[nMod].setKDiffuse(Interface->diffuseColorMtl);
-	modelsObj[nMod].setKSpecular(Interface->specularColorMtl);
-	modelsObj[nMod].setShinniness(Interface->shinniness);
-	modelsObj[nMod].setRoghness(Interface->roughness);
+	modelsObj[nMod]->setKAmbient(Interface->ambientColorMtl);
+	modelsObj[nMod]->setKDiffuse(Interface->diffuseColorMtl);
+	modelsObj[nMod]->setKSpecular(Interface->specularColorMtl);
+	modelsObj[nMod]->setShinniness(Interface->shinniness);
+	modelsObj[nMod]->setRoghness(Interface->roughness);
 	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
 
 	//Light dir
-	directionalLight.setLightDir(Interface->getLightDir());
-	directionalLight.setAmbientColor(Interface->ambientColor);
-	directionalLight.setDiffuseColor(Interface->diffuseColor);
-	directionalLight.setSpecularColor(Interface->specularColor);
-	directionalLight.setONOFF(Interface->onLightDir);
+	directionalLight->setLightDir(Interface->direction);
+	directionalLight->setAmbientColor(Interface->ambientColor);
+	directionalLight->setDiffuseColor(Interface->diffuseColor);
+	directionalLight->setSpecularColor(Interface->specularColor);
+	directionalLight->setONOFF(Interface->onLightDir);
 
 	//Point lights
 	int nLight = Interface->nPointLight;
-
+	//std::cout << Interface->direction[0] << ' ' << Interface->direction[1] << ' ' << Interface->direction[2] << std::endl;
 	if (lightAnt != nLight)
 	{
-		Interface->onLightPoint = PointLight[nLight].getONOFF();
-		Interface->ambientColorPoint = PointLight[nLight].getAmbientColor();
-		Interface->diffuseColorPoint = PointLight[nLight].getDiffuseColor();
-		Interface->specularColorPoint = PointLight[nLight].getSpecularColor();
-		Interface->lightPointPos = PointLight[nLight].getLightPos();
-		Interface->lightAttPoint = PointLight[nLight].getKAttenuation();
+		Interface->onLightPoint = PointLight[nLight]->getONOFF();
+		Interface->ambientColorPoint = PointLight[nLight]->getAmbientColor();
+		Interface->diffuseColorPoint = PointLight[nLight]->getDiffuseColor();
+		Interface->specularColorPoint = PointLight[nLight]->getSpecularColor();
+		Interface->lightPointPos = PointLight[nLight]->getLightPos();
+		Interface->lightAttPoint = PointLight[nLight]->k;
 		lightAnt = nLight;
 	}
 
-	PointLight[nLight].setLightPos(Interface->lightPointPos);
-	PointLight[nLight].setONOFF(Interface->onLightPoint);
-	PointLight[nLight].setAmbientColor(Interface->ambientColorPoint);
-	PointLight[nLight].setDiffuseColor(Interface->diffuseColorPoint);
-	PointLight[nLight].setSpecularColor(Interface->specularColorPoint);
-	PointLight[nLight].setKAttenuation(Interface->lightAttPoint);
+	PointLight[nLight]->setLightPos(Interface->lightPointPos);
+	PointLight[nLight]->setONOFF(Interface->onLightPoint);
+	PointLight[nLight]->setAmbientColor(Interface->ambientColorPoint);
+	PointLight[nLight]->setDiffuseColor(Interface->diffuseColorPoint);
+	PointLight[nLight]->setSpecularColor(Interface->specularColorPoint);
+	PointLight[nLight]->setKAttenuation(Interface->lightAttPoint);
 
 
 	//std::cout << Interface->onLightDir << std::endl};
@@ -702,7 +715,7 @@ void render()
     // Use the shader
 	//shader->use();
 	
-	renderDirLight();		
+	renderDirLight(shaderAllLightCookTorence);		
 
 	//tweakbar
 	TwDraw();
@@ -763,11 +776,11 @@ int main(int argc, char const *argv[])
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 		// Deletes the vertex array from the GPU
-		glDeleteVertexArrays(1, &modelsObj[i].VAO[0]);
+		glDeleteVertexArrays(1, &modelsObj[i]->VAO[0]);
 		// Deletes the vertex object from the GPU
-		glDeleteBuffers(1, &modelsObj[i].VBO[0]);
-		glDeleteBuffers(1, &modelsObj[i].VBO[1]);
-		glDeleteBuffers(1, &modelsObj[i].VBO[2]);
+		glDeleteBuffers(1, &modelsObj[i]->VBO[0]);
+		glDeleteBuffers(1, &modelsObj[i]->VBO[1]);
+		glDeleteBuffers(1, &modelsObj[i]->VBO[2]);
 
 	}
 
@@ -775,8 +788,11 @@ int main(int argc, char const *argv[])
 	delete shader;
 	delete shaderAllLightCookTorence;
 	delete shaderAllLight;
-	delete Interface;
 	delete Camara;
+	delete SpotLight;
+	delete directionalLight;
+	delete object;
+	delete Interface;
 	TwTerminate();
     // Stops the glfw program
     glfwTerminate();

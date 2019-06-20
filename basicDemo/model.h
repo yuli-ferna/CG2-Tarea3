@@ -30,7 +30,7 @@ public:
 	model();
 	~model();
 
-	model loadObj(std::string path);
+	model* loadObj(std::string path);
 	void loadMTL(std::string path);
 	glm::vec3 getKAmbient();
 	void setKAmbient(glm::vec3 ambC);

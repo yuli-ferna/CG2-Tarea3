@@ -7,10 +7,8 @@
 
 class userInterface {
 public:
-	static userInterface* mInterface; //Holds the instance of the class
+	//static userInterface* mInterface; //Holds the instance of the class
 	TwBar* mUserInterface;
-	///Method to obtain the only instance of the calls
-	static userInterface* Instance();
 	~userInterface(); 
 	void reshape();
 	void show();
@@ -52,6 +50,7 @@ public:
 	float cuttof;
 	float outerCuttof;
 
-private:
+	glm::vec3 direction;
 	userInterface();
+private:
 };

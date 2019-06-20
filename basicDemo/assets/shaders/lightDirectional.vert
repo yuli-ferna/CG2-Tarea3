@@ -14,23 +14,25 @@ uniform mat4 Proj;
 
 //Light direction
 uniform vec3 lightDir;
-
 uniform vec3 lightPos;
+
+uniform vec3 viewPos;
 
 out vec4 vColor;
 out vec2 texCoord;
 
-out vec3 viewNorm;
+out vec3 normal;
 out vec3 viewVec;
+out vec3 fragPos;
 
 void main()
 {
 
-    vec4 fragPos = View * Model * vec4(vertexPosition, 1.0f);
+    vec4 fragPos = /*View **/ Model * vec4(vertexPosition, 1.0f);
 
-    viewNorm = (mat3(View * Model) * vertexNormal);
+    normal = mat3(transpose(inverse(Model))) * vertexNormal;
     
-    viewVec = ( - fragPos.xyz);
+    viewVec = (viewPos - fragPos.xyz);
  
     texCoord = vertexTextureCoord;
     gl_Position = MVP * (vec4(vertexPosition, 1.0f));

@@ -4,22 +4,6 @@ using namespace std;
 
 extern unsigned int windowWidth, windowHeight;
 
-// Global static pointer used to ensure a single instance of the class.
-userInterface* userInterface::mInterface = NULL;
-
-/**
-* Creates an instance of the class
-*
-* @return the instance of this class
-*/
-userInterface* userInterface::Instance()
-{
-	if (!mInterface)   // Only allow one instance of class to be generated.
-		mInterface = new userInterface();
-
-	return mInterface;
-}
-
 userInterface::userInterface()
 {
 	mUserInterface = TwNewBar("Tarea");
@@ -33,6 +17,8 @@ userInterface::userInterface()
 	TwDefine("Tarea size = '200 300'");
 	TwDefine("Tarea color='143 66 244'");
 
+	direction = glm::vec3(3.0f, -4.0f, -2.0f);
+
 	TwAddVarRW(mUserInterface, "nModel", TW_TYPE_UINT32, &nModel, " group='Modelselect' min=0 label='Select model' step=1 max=2 ");
 	TwAddVarRW(mUserInterface, "ambientalColorMtlDir", TW_TYPE_COLOR3F, &ambientColorMtl, "label='Ambiental Mtl' group='Modelselect'");
 	TwAddVarRW(mUserInterface, "diffuseColorMtlDir", TW_TYPE_COLOR3F, &diffuseColorMtl, "label='Diffuse Mtl' group='Modelselect'");
@@ -42,7 +28,7 @@ userInterface::userInterface()
 	//TwDefine("Tarea/MaterialColor group='Modelselect' label='Material Color'");
 
 	TwAddSeparator(mUserInterface, "sep1", NULL);
-	//TwAddVarRW(mUserInterface, "LightDir", TW_TYPE_DIR3D, &lightDir, "");
+	TwAddVarRW(mUserInterface, "sdasd", TW_TYPE_DIR3F, &direction, "group='DirectionLigth'");
 	TwAddVarRW(mUserInterface, "ON/OFF 1", TW_TYPE_BOOLCPP, &onLightDir, "label='ON/OFF' group='DirectionalLigth'");
 	TwAddVarRW(mUserInterface, "Ligth X", TW_TYPE_FLOAT, &lightDir[0], " group='DirectionLigth' step=0.01 ");
 	TwAddVarRW(mUserInterface, "Ligth Y", TW_TYPE_FLOAT, &lightDir[1], " group='DirectionLigth' step=0.01 ");
