@@ -33,7 +33,7 @@ const char *windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow *window;
 // Shader object
-Shader *shader, *shaderAllLightCookTorence, *shaderAllLightOrenNayer, *shaderAllLight;
+Shader *shader, *shaderDirLight, *shaderPointLight, *shaderAllLight, *shaderSpotLight;
 
 unsigned int textureID;
 
@@ -180,7 +180,16 @@ void initUserInterfaceValues()
 	Interface->specularColorPoint = PointLight[0]->getSpecularColor();
 	Interface->lightPointPos = PointLight[0]->getLightPos();
 	Interface->lightAttPoint = PointLight[0]->getKAttenuation();
-	//
+
+	//Spot Light
+	Interface->onLightSpot = SpotLight->getONOFF();
+	Interface->ambientColorSpot = SpotLight->getAmbientColor();
+	Interface->diffuseColorSpot = SpotLight->getDiffuseColor();
+	Interface->specularColorSpot = SpotLight->getSpecularColor();
+	Interface->lightAttSpot = SpotLight->getKAttenuation();
+	Interface->cuttof = SpotLight->getCuttof();
+	Interface->outerCuttof = SpotLight->getOuterCuttof();
+	
 }
 /**
  * initialize the user interface
@@ -286,9 +295,12 @@ void buildGeometry()
 {
 	std::vector< std::string > paths;
 	//Paths
-	paths.push_back(".\\assets\\models\\catS.obj");
+	/*paths.push_back(".\\assets\\models\\catS.obj");
 	paths.push_back(".\\assets\\models\\cubeS.obj");
-	paths.push_back(".\\assets\\models\\pokeballS.obj");
+	paths.push_back(".\\assets\\models\\pokeballS.obj");*/
+	paths.push_back(".\\assets\\models\\cube1.obj");
+	paths.push_back(".\\assets\\models\\cube2.obj");
+	paths.push_back(".\\assets\\models\\cube3.obj");
 	paths.push_back(".\\assets\\models\\planeS.obj");
 
 	//paths.push_back(".\\assets\\models\\light1S.obj");
@@ -462,10 +474,11 @@ bool init()
 
     // Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-	shaderAllLightCookTorence = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
-	shaderAllLightOrenNayer = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
-	//shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
-	shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+	shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+	shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
+	shaderSpotLight = new Shader("assets/shaders/lightSpot.vert", "assets/shaders/lightSpot.frag");
+	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     // Loads all the geometry into the GPU
     buildGeometry();
@@ -502,14 +515,16 @@ void processKeyboardInput(GLFWwindow *window)
     {
         // Reloads the shader
 		delete shader;
-		delete shaderAllLightCookTorence;
-		delete shaderAllLightOrenNayer;
+		delete shaderDirLight;
+		delete shaderPointLight;
+		delete shaderSpotLight;
 		delete shaderAllLight;
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-		shaderAllLightCookTorence = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
-		shaderAllLightOrenNayer = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
-		//shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
-		shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+		shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+		shaderSpotLight = new Shader("assets/shaders/lightSpot.vert", "assets/shaders/lightSpot.frag");
+		shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
+		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     }
 	
@@ -541,23 +556,59 @@ void updateMVP()
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
 
-void renderDirLight(Shader* shaderAllLight)
+void renderObj(Shader* shaderAllLight)
 {
 	glm::mat4 MVP;
+	// Use the shader
+	shaderAllLight->use();
+
+	//Light directional
+	shaderAllLight->setVec3("viewPos", Camara->getPosition());
+	//glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight->getLightDir(), 0));
+	shaderAllLight->setVec3("lightDir", directionalLight->getLightDir());
+	shaderAllLight->setVec3("lightPos", directionalLight->getLightPos());
+	shaderAllLight->setVec3("ambientColor", directionalLight->getAmbientColor());
+	shaderAllLight->setVec3("diffuseColor", directionalLight->getDiffuseColor());
+	shaderAllLight->setVec3("specularColor", directionalLight->getSpecularColor());
+	shaderAllLight->setBool("on", directionalLight->getONOFF());
+
+	//Point Light
+
+	for (int i = 0; i < N_POINTLIGHTS; i++)
+	{
+		std::string it = std::to_string(i);
+		//shaderAllLight->setVec3("pointLights[" + it + "].position", glm::vec3(2.0f, 0.0f, -2.0f));
+		shaderAllLight->setVec3("pointLights[" + it + "].position", PointLight[i]->getLightPos());
+		shaderAllLight->setVec3("pointLights[" + it + "].ambientColor", PointLight[i]->getAmbientColor());
+		shaderAllLight->setVec3("pointLights[" + it + "].diffuseColor", PointLight[i]->getDiffuseColor());
+		shaderAllLight->setVec3("pointLights[" + it + "].specularColor", PointLight[i]->getSpecularColor());
+		shaderAllLight->setVec3("pointLights[" + it + "].attenuationK", PointLight[i]->getKAttenuation());
+		shaderAllLight->setBool("pointLights[" + it + "].on", PointLight[i]->getONOFF());
+	}
+	//////std::cout << PointLight[0]->getLightPos().x << ' ' << PointLight[0]->getLightPos().y << ' ' << PointLight[0]->getLightPos().z << std::endl;
+
+	//Spot Light
+	shaderAllLight->setVec3("SpotLight.position", Camara->getPosition());
+	shaderAllLight->setVec3("SpotLight.direction", Camara->getFront());
+	shaderAllLight->setVec3("SpotLight.ambientColor", SpotLight->getAmbientColor());
+	shaderAllLight->setVec3("SpotLight.diffuseColor", SpotLight->getDiffuseColor());
+	shaderAllLight->setVec3("SpotLight.specularColor", SpotLight->getSpecularColor());
+	shaderAllLight->setVec3("SpotLight.attenuationK", SpotLight->getKAttenuation());
+	shaderAllLight->setFloat("SpotLight.cuttof", SpotLight->getCuttof());
+	shaderAllLight->setFloat("SpotLight.outerCuttof", SpotLight->getOuterCuttof());
+	shaderAllLight->setBool("SpotLight.on", SpotLight->getONOFF());
+
 	//Draw models of the scene
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
-		// Use the shader
-		shaderAllLight->use();
-
 		//MVP trnasformations
-		updateMVP();
+		updateMVP();/*
 		MVP = (Proj * View * Model);
-		shaderAllLight->setMat4("MVP", MVP);
+		shaderAllLight->setMat4("MVP", MVP);*/
 		shaderAllLight->setMat4("Model", Model);
 		shaderAllLight->setMat4("View", View);
 		shaderAllLight->setMat4("Proj", Proj);
-		shaderAllLight->setInt("Mtl", i);
+		//shaderAllLight->setInt("Mtl", i);
 		//std::cout << Camara->getPosition().x << ' ' << Camara->getPosition().y << ' ' << Camara->getPosition().z << std::endl;
 	
 		//Material
@@ -579,40 +630,8 @@ void renderDirLight(Shader* shaderAllLight)
 		
 	}
 
-	//Light directional
-	shaderAllLight->setVec3("viewPos", Camara->getPosition());
-	//glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight->getLightDir(), 0));
-	shaderAllLight->setVec3("lightDir", directionalLight->getLightDir());
-	shaderAllLight->setVec3("lightPos", directionalLight->getLightPos());
-	shaderAllLight->setVec3("ambientColor", directionalLight->getAmbientColor());
-	shaderAllLight->setVec3("diffuseColor", directionalLight->getDiffuseColor());
-	shaderAllLight->setVec3("specularColor", directionalLight->getSpecularColor());
-	shaderAllLight->setBool("on", directionalLight->getONOFF());
-
-	//Point Light
-
-	for (int i = 0; i < N_POINTLIGHTS; i++)
-	{
-		std::string it = std::to_string(i);
-		shaderAllLight->setVec3("pointLights["+ it +"].position", PointLight[i]->getLightPos());
-		shaderAllLight->setVec3("pointLights["+ it +"].ambientColor", PointLight[i]->getAmbientColor());
-		shaderAllLight->setVec3("pointLights["+ it +"].diffuseColor", PointLight[i]->getDiffuseColor());
-		shaderAllLight->setVec3("pointLights["+ it +"].specularColor", PointLight[i]->getSpecularColor());
-		shaderAllLight->setVec3("pointLights["+ it +"].attenuationK", PointLight[i]->getKAttenuation());
-		shaderAllLight->setBool("pointLights["+ it +"].on", PointLight[i]->getONOFF());
-	}
-
-	//Spot Light
-	shaderAllLight->setVec3("SpotLight.position", Camara->getPosition());
-	shaderAllLight->setVec3("SpotLight.ambientColor", SpotLight->getAmbientColor());
-	shaderAllLight->setVec3("SpotLight.diffuseColor", SpotLight->getDiffuseColor());
-	shaderAllLight->setVec3("SpotLight.specularColor", SpotLight->getSpecularColor());
-	shaderAllLight->setVec3("SpotLight.attenuationK", SpotLight->getKAttenuation());
-	shaderAllLight->setFloat("SpotLight.cuttof", SpotLight->getCuttof());
-	shaderAllLight->setFloat("SpotLight.outerCuttof", SpotLight->getOuterCuttof());
-	shaderAllLight->setBool("SpotLight.on", SpotLight->getONOFF());
-
-	glBindVertexArray(0);
+	
+	//glBindVertexArray(0);
 
 	
 	//Light models
@@ -701,6 +720,14 @@ void updateUserInterface()
 	PointLight[nLight]->setSpecularColor(Interface->specularColorPoint);
 	PointLight[nLight]->setKAttenuation(Interface->lightAttPoint);
 
+	//Spot Light;
+	SpotLight->setAmbientColor(Interface->ambientColorSpot);
+	SpotLight->setDiffuseColor(Interface->diffuseColorSpot);
+	SpotLight->setSpecularColor(Interface->specularColorSpot);
+	SpotLight->setCuttof(Interface->cuttof);
+	SpotLight->setOuterCuttof(Interface->outerCuttof);
+	SpotLight->setONOFF(Interface->onLightSpot);
+	SpotLight->setKAttenuation(Interface->lightAttSpot);
 
 	//std::cout << Interface->onLightDir << std::endl};
 }
@@ -715,7 +742,8 @@ void render()
     // Use the shader
 	//shader->use();
 	
-	renderDirLight(shaderAllLightCookTorence);		
+	renderObj(shaderAllLight);		
+	//renderObj(shaderDirLight);
 
 	//tweakbar
 	TwDraw();
@@ -786,7 +814,7 @@ int main(int argc, char const *argv[])
 
 	// Destroy the shader
 	delete shader;
-	delete shaderAllLightCookTorence;
+	delete shaderDirLight;
 	delete shaderAllLight;
 	delete Camara;
 	delete SpotLight;

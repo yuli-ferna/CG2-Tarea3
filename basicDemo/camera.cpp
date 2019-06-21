@@ -42,7 +42,12 @@ glm::mat4 camera::getView()
 
 glm::vec3 camera::getPosition()
 {
-	return position;
+	return this->position;
+}
+
+glm::vec3 camera::getFront()
+{
+	return this->front;
 }
 
 void camera::updateInputMouse(GLfloat offsetX, GLfloat offsetY)

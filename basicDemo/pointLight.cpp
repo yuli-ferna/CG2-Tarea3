@@ -3,7 +3,7 @@
 pointLight::pointLight(glm::vec3 lightP)
 {
 	setLightPos(lightP);
-	setKAttenuation(glm::vec3(1.0f, 0.1f, 0.01f));
+	setKAttenuation(glm::vec3(0.5f, 0.1f, 0.01f));
 	ON = true;
 }
 

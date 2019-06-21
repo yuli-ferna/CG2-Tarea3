@@ -36,6 +36,7 @@ public:
 	glm::mat4 getRotation();
 	glm::mat4 getView();
 	glm::vec3 getPosition();
+	glm::vec3 getFront();
 	void updateInputMouse(GLfloat offsetX, GLfloat offsetY);
 	void updateInputMouse(const double offsetX, const double offsetY);
 	void updateInputKeyboard(const char direction);

@@ -7,7 +7,6 @@ layout (location = 1) in vec2 vertexTextureCoord;
 layout (location = 2) in vec3 vertexNormal;
 
 //Uniforms MVP matrix
-uniform mat4 MVP;
 uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Proj;
@@ -28,12 +27,12 @@ out vec3 fragPos;
 void main()
 {
 
-    vec4 fragPos = /*View **/ Model * vec4(vertexPosition, 1.0f);
+    vec3 fragPos = vec3(Model * vec4(vertexPosition, 1.0f));
 
     normal = mat3(transpose(inverse(Model))) * vertexNormal;
     
     viewVec = (viewPos - fragPos.xyz);
  
     texCoord = vertexTextureCoord;
-    gl_Position = MVP * (vec4(vertexPosition, 1.0f));
+    gl_Position = Proj * View * (vec4(fragPos, 1.0f));
 }

@@ -28,12 +28,9 @@ userInterface::userInterface()
 	//TwDefine("Tarea/MaterialColor group='Modelselect' label='Material Color'");
 
 	TwAddSeparator(mUserInterface, "sep1", NULL);
-	TwAddVarRW(mUserInterface, "sdasd", TW_TYPE_DIR3F, &direction, "group='DirectionLigth'");
 	TwAddVarRW(mUserInterface, "ON/OFF 1", TW_TYPE_BOOLCPP, &onLightDir, "label='ON/OFF' group='DirectionalLigth'");
-	TwAddVarRW(mUserInterface, "Ligth X", TW_TYPE_FLOAT, &lightDir[0], " group='DirectionLigth' step=0.01 ");
-	TwAddVarRW(mUserInterface, "Ligth Y", TW_TYPE_FLOAT, &lightDir[1], " group='DirectionLigth' step=0.01 ");
-	TwAddVarRW(mUserInterface, "Ligth Z", TW_TYPE_FLOAT, &lightDir[2], " group='DirectionLigth' step=0.01 ");
-	TwDefine("Tarea/DirectionLigth group='DirectionalLigth' label='Direction'");
+	TwAddVarRW(mUserInterface, "dirLight", TW_TYPE_DIR3F, &direction, "group='DirectionLigth' label='Direction' opened= true");
+	//TwDefine("Tarea/DirectionLigth group='DirectionalLigth' label='Direction'");
 	TwAddVarRW(mUserInterface, "ambientalColorDir", TW_TYPE_COLOR3F, &ambientColor, "label='Ambiental Color' group='DirectionalLigth'");
 	TwAddVarRW(mUserInterface, "diffuseColorDir", TW_TYPE_COLOR3F, &diffuseColor,"label='Diffuse Color' group='DirectionalLigth'");
 	TwAddVarRW(mUserInterface, "specularColorDir", TW_TYPE_COLOR3F, &specularColor, "label='Specular Color' group='DirectionalLigth'");

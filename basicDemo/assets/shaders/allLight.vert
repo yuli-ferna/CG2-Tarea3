@@ -7,7 +7,7 @@ layout (location = 1) in vec2 vertexTextureCoord;
 layout (location = 2) in vec3 vertexNormal;
 
 //Uniforms MVP matrix
-uniform mat4 MVP;
+// uniform mat4 MVP;
 uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Proj;
@@ -15,25 +15,19 @@ uniform mat4 Proj;
 //Light direction
 uniform vec3 lightDir;
 
-uniform vec3 lightPos;
-uniform vec3 lightPosPoint;
-
 out vec4 vColor;
 out vec2 texCoord;
 
-out vec3 viewNorm;
+out vec3 Normal;
 out vec3 viewVec;
-out vec3 lightDir1;
+out vec3 fragPos;
 
 void main()
 {
-    //ver fragpos
-    vec4 fragPos =/* View **/ Model * vec4(vertexPosition, 1.0f);
-    
-    viewNorm = (/*mat3(View * Model) **/ vertexNormal);
-    
-    viewVec = ( - fragPos.xyz);
-    lightDir1 = normalize(lightPos - fragPos.xyz);
+    fragPos = vec3(Model * vec4(vertexPosition, 1.0f));
+
+    Normal = (mat3(transpose(inverse(Model))) * vertexNormal);
+
     texCoord = vertexTextureCoord;
-    gl_Position = MVP * (vec4(vertexPosition, 1.0f));
+    gl_Position = Proj * View * (vec4(fragPos, 1.0f));
 }
