@@ -16,7 +16,7 @@ glm::mat4 camera::getRotation()
 camera::camera()
 {
 	cameraMode = false;
-	speed = 0.05f;
+	speed = 0.1f;
 	speedMouse = 0.05f;
 	position = glm::vec3(0.0f, 0.5f, 3.0f);
 	front = glm::vec3(0.0f, 0.0f, -1.0f);

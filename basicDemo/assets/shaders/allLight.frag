@@ -55,13 +55,13 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir)
 {
     vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
     vec3 reflectDir = reflect(-LightDir, Normal);
-    
+    vec3 halfwayDir = normalize(LightDir + ViewDir);
     //Material with lightDir components
     vec3 ambient  = ka * ambientColor;
     if(!on)
-        return ambient;
+        return vec3(0.0f);
     vec3 diffuse  = kd * diffuseColor * /*texture2D(text, texCoord).rgb **/ max(0.0, dot(Normal, LightDir));
-    vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, ViewDir)), n);
+    vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, halfwayDir)), n);
 
     return ambient + diffuse + specular;
 }
@@ -71,12 +71,13 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
 
     vec3 lightDir = normalize(pointLight.position - fragPos);
     vec3 R = reflect(-lightDir, normal);
+    vec3 halfwayDir = normalize(lightDir + ViewDir);
     
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
-        return ambient;
+        return vec3(0.0f);
     vec3 diffuse  = kd * pointLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
-    vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
+    vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
     float dist = length(pointLight.position - fragPos);
     float attenuation = 1.0f / (pointLight.attenuationK.x 
@@ -95,6 +96,8 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir)
 {
     //Spot
     vec3 lightDir = normalize(SpotLight.position - fragPos);
+    vec3 halfwayDir = normalize(lightDir + ViewDir);
+
     float theta = dot(lightDir, normalize(-SpotLight.direction));
     float epsilon   = SpotLight.cuttof - SpotLight.outerCuttof;
 
@@ -105,9 +108,9 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir)
 
     vec3 ambient  = ka * SpotLight.ambientColor;
     if(!SpotLight.on)
-        return ambient;
+        return vec3(0.0f);
     vec3 diffuse  = kd * SpotLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
-    vec3 specular = ks * SpotLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
+    vec3 specular = ks * SpotLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
     float dist = length(SpotLight.position - fragPos);
     float attenuation = 1.0f / (SpotLight.attenuationK.x 

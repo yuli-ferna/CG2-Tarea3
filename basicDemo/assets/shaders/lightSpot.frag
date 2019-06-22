@@ -77,7 +77,7 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
         return ambient;
-    vec3 diffuse  = kd * pointLight.diffuseColor * texture2D(text, texCoord) * max(0.0, dot(normal, lightDir));
+    vec3 diffuse  = kd * pointLight.diffuseColor * texture2D(text, texCoord).rgb * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
     
     float dist = length(pointLight.position - fragPos);

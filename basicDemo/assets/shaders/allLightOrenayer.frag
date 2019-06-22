@@ -47,36 +47,60 @@ uniform vec3 ka;
 uniform vec3 kd;
 uniform vec3 ks;
 uniform float n;
+uniform float roughness;
 
 // Fragment Color
 out vec4 color;
+
+float calculateOrenNayar(vec3 Normal, vec3 LightDir, vec3 ViewDir)
+{
+    float tita = roughness * roughness;
+    
+    float dotVN = clamp(dot(Normal, ViewDir), 0.0f, 1.0f);
+    float dotLN = clamp(dot(Normal, LightDir), 0.0f, 1.0f);
+    float alfa = max(acos(dotLN), acos(dotVN));
+    float beta = min(acos(dotLN), acos(dotVN));
+    
+    float A = 1.0f - (0.5f * tita / (tita + 0.57f));
+    float B = 0.45f * (tita / (tita + 0.09f));
+    vec3 cosR = normalize(ViewDir - Normal * dotVN);
+    vec3 cosI = normalize(LightDir - Normal * dotLN);
+    float cosRI = clamp(dot(cosI, cosR), 0.0f, 1.0f);
+    
+    float Rf = A + (max(0.0f, cosRI) * B * sin(alfa) * tan(beta));
+    return Rf;
+}
 
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir)
 {
     vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
     vec3 reflectDir = reflect(-LightDir, Normal);
-    
-    //Material with lightDir components
+
+    //Material with lightDir components 
     vec3 ambient  = ka * ambientColor;
     if(!on)
         return ambient;
-    vec3 diffuse  = kd * diffuseColor * /*texture2D(text, texCoord).rgb **/ max(0.0, dot(Normal, LightDir));
+    float Rf = calculateOrenNayar(Normal, LightDir, ViewDir);
+    vec3 diffuse = kd * diffuseColor /*texture2D(text, texCoord).rgb *
+    */* max(0.0, dot(Normal, LightDir)) * Rf;
     // vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, ViewDir)), n);
 
     return ambient + diffuse;
 }
 
-vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
+vec3 intensityPointLight(PointLight pointLight, vec3 Normal, vec3 ViewDir)
 {
 
-    vec3 lightDir = normalize(pointLight.position - fragPos);
-    vec3 R = reflect(-lightDir, normal);
+    vec3 LightDir = normalize(pointLight.position - fragPos);
+    vec3 R = reflect(-LightDir, Normal);
     
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
         return ambient;
+    float Rf = calculateOrenNayar(Normal, LightDir, ViewDir);
+    
     vec3 diffuse  = kd * pointLight.diffuseColor /* texture2D(text, texCoord).rgb */
-    * max(0.0, dot(normal, lightDir));
+    * max(0.0, dot(Normal, LightDir)) * Rf;
     // vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
     
     float dist = length(pointLight.position - fragPos);
@@ -107,7 +131,10 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir)
     vec3 ambient  = ka * SpotLight.ambientColor;
     if(!SpotLight.on)
         return ambient;
-    vec3 diffuse  = kd * SpotLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
+    float Rf = calculateOrenNayar(normal, lightDir, ViewDir);
+    
+    vec3 diffuse  = kd * SpotLight.diffuseColor /* texture2D(text, texCoord).rgb */
+    * max(0.0, dot(normal, lightDir)) * Rf;
     // vec3 specular = ks * SpotLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
     
     float dist = length(SpotLight.position - fragPos);

@@ -51,6 +51,11 @@ uniform float n;
 // Fragment Color
 out vec4 color;
 
+// float calculateCookTorrence()
+// {
+
+// }
+
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir)
 {
     vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
@@ -71,21 +76,57 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
 
     vec3 lightDir = normalize(pointLight.position - fragPos);
     vec3 R = reflect(-lightDir, normal);
-    
+    //cooktorrence     
+    float NdotL = clamp(dot(normal, lightDir), 0.0f, 1.0f);
+	float Rs = 0.0f;
+    if (NdotL > 0) 
+	{
+		vec3 HalfwayDir = normalize(lightDir + ViewDir);
+		float NdotH = clamp(dot(normal, HalfwayDir), 0.0f, 1.0f);
+		float NdotV = clamp(dot(normal, ViewDir), 0.0f, 1.0f);
+		float VdotH = clamp(dot(lightDir, HalfwayDir), 0.0f, 1.0f);
+
+		// Fresnel reflectance
+		float F = pow(1.0 - VdotH, 5.0);
+		F *= (1.0 - F0);
+		F += F0;
+
+		// Microfacet distribution by Beckmann
+		float m_squared = roughness * roughness;
+		float r1 = 1.0 / (4.0 * m_squared * pow(NdotH, 4.0));
+		float r2 = (NdotH * NdotH - 1.0) / (m_squared * NdotH * NdotH);
+		float D = r1 * exp(r2);
+
+		// Geometric shadowing
+		float two_NdotH = 2.0 * NdotH;
+		float g1 = (two_NdotH * NdotV) / VdotH;
+		float g2 = (two_NdotH * NdotL) / VdotH;
+		float G = min(1.0, min(g1, g2));
+
+		Rs = (F * D * G) / (PI * NdotL * NdotV);
+	}
+    // materialDiffuseColor * lightColor * NdotL + 
+    //lightColor * materialSpecularColor * NdotL * (k + Rs * (1.0 - k));
+
+    //cooktorrence     
+
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
         return ambient;
-    vec3 diffuse  = kd * pointLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
-    vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n);
+    
+    vec3 diffuse  = kd * pointLight.diffuseColor * max(0.0, dot(normal, lightDir))
+    * NdotL;
+    vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, ViewDir)), n)
+    * NdotL * (k + Rs * (1.0 - k));
     
     float dist = length(pointLight.position - fragPos);
     float attenuation = 1.0f / (pointLight.attenuationK.x 
         + pointLight.attenuationK.y * dist
         + pointLight.attenuationK.z * (dist * dist));
     
-    ambient  *= attenuation;  
-    diffuse   *= attenuation;
-    specular *= attenuation;  
+    // ambient  *= attenuation;  
+    // diffuse   *= attenuation;
+    // specular *= attenuation;  
     
     return ambient + diffuse + specular;
 }

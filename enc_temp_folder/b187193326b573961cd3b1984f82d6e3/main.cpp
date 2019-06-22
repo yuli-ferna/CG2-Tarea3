@@ -771,7 +771,6 @@ void render()
 	renderObj(shaderAllLight, 0);
 	renderObj(shaderAllLight, 1);
 	renderObj(shaderAllLightOrenayer, 2);
-	renderObj(shaderAllLightOrenayer, 3);
 
 	drawLights();
 
