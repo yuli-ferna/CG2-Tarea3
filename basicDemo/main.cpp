@@ -767,8 +767,8 @@ void render()
 
 		}
 	}*/
-	//renderObj(shaderAllLightCookTorrence, 0);
-	renderObj(shaderAllLight, 0);
+	renderObj(shaderAllLightCookTorrence, 0);
+	//renderObj(shaderAllLightOrenayer, 0);
 	renderObj(shaderAllLight, 1);
 	renderObj(shaderAllLightOrenayer, 2);
 	renderObj(shaderAllLightOrenayer, 3);
