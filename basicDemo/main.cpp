@@ -489,7 +489,7 @@ bool init()
     buildGeometry();
     
 	// Loads the texture into the GPU
-    textureID = loadTexture("assets/textures/bricks2.jpg");
+    textureID = loadTexture("assets/textures/grass.png");
 
 	//Initializate MVP values
 	initMVP();

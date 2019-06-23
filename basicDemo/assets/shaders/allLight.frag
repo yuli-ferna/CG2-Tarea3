@@ -51,7 +51,7 @@ uniform float n;
 // Fragment Color
 out vec4 color;
 
-vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir)
+vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 {
     vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
     vec3 reflectDir = reflect(-LightDir, Normal);
@@ -60,13 +60,13 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir)
     vec3 ambient  = ka * ambientColor;
     if(!on)
         return vec3(0.0f);
-    vec3 diffuse  = kd * diffuseColor * /*texture2D(text, texCoord).rgb **/ max(0.0, dot(Normal, LightDir));
+    vec3 diffuse  = diffuseColorK * diffuseColor * max(0.0, dot(Normal, LightDir));
     vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, halfwayDir)), n);
 
     return ambient + diffuse + specular;
 }
 
-vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
+vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 diffuseColorK)
 {
 
     vec3 lightDir = normalize(pointLight.position - fragPos);
@@ -76,7 +76,7 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
         return vec3(0.0f);
-    vec3 diffuse  = kd * pointLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
+    vec3 diffuse  = diffuseColorK * pointLight.diffuseColor * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
     float dist = length(pointLight.position - fragPos);
@@ -92,7 +92,7 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir)
 }
 
 
-vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir)
+vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir, vec3 diffuseColorK)
 {
     //Spot
     vec3 lightDir = normalize(SpotLight.position - fragPos);
@@ -109,7 +109,7 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir)
     vec3 ambient  = ka * SpotLight.ambientColor;
     if(!SpotLight.on)
         return vec3(0.0f);
-    vec3 diffuse  = kd * SpotLight.diffuseColor /* texture2D(text, texCoord).rgb */* max(0.0, dot(normal, lightDir));
+    vec3 diffuse  = diffuseColorK * SpotLight.diffuseColor * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * SpotLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
     float dist = length(SpotLight.position - fragPos);
@@ -133,11 +133,13 @@ void main()
     vec3 normal = normalize(Normal);
     vec3 ViewDir = normalize(viewPos - fragPos.xyz);
     
-    vec3 result = intensitySpotLight(SpotLight, normal, ViewDir);
-    result += intensityPointLight(pointLights[0], normal, ViewDir);
-    result += intensityPointLight(pointLights[1], normal, ViewDir);
+    vec3 result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
+    result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
+    result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
     
-    result += intensiyLightDir(normal,ViewDir);
+    result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
+    if(texture2D(text, texCoord).a < 0.1)
+            discard;
     color = vec4(result, 1.0f);
     
     //Texture
