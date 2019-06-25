@@ -6,6 +6,7 @@ in vec2 texCoord;
 
 //Texture
 uniform sampler2D text;
+uniform sampler2D sepcMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -48,6 +49,7 @@ uniform vec3 kd;
 uniform vec3 ks;
 uniform float n; // Shinniness
 uniform float roughness;
+uniform bool albedo;
 uniform float f0 = 0.8;
 
 // Fragment Color
@@ -62,21 +64,19 @@ float calculateCookTorrence(float NdotL, vec3 normal, vec3 lightDir, vec3 ViewDi
     float VdotH = clamp(dot(lightDir, HalfwayDir), 0.0f, 1.0f);
 
     // Fresnel (usamos shinnines como material de reflectancia)
-    float fresnel = pow(1.0 - VdotH, 5.0);
-    fresnel *= (1.0 - f0);
-    fresnel += f0;
+    float fresnel = (pow(1.0 - VdotH, 5.0) * (1.0 - f0)) + f0;
 
     // Microfacet distribution by Beckmann
-    float m_squared = roughness * roughness;
-
-    float r1 = 1.0 / (4.0 * m_squared * pow(NdotH, 4.0));
-    float r2 = (NdotH * NdotH - 1.0) / (m_squared * NdotH * NdotH);
-    float Rough = r1 * exp(r2) * exp(r2);
+    float m2 = roughness * roughness;
+    float NdotH2 = NdotH * NdotH;
+    float PI = 3.14159265359;
+    float r1 = 1.0 / ( PI * m2 * pow(NdotH, 4.0));
+    float r2 = (NdotH2 - 1.0) / (m2 * NdotH2);
+    float Rough = r1  * exp(r2);
 
     // Geometric shadowing
-    float two_NdotH = 2.0 * NdotH;
-    float g1 = (two_NdotH * NdotV) / VdotH;
-    float g2 = (two_NdotH * NdotL) / VdotH;
+    float g1 = (2.0 * NdotH * NdotV) / VdotH;
+    float g2 = (2.0 * NdotH * NdotL) / VdotH;
     float geometric = min(1.0, min(g1, g2));
 
     Rs = (fresnel * Rough * geometric) / (  NdotL * NdotV);
@@ -102,7 +102,9 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
     vec3 diffuse  = diffuseColorK *  diffuseColor
     * NdotL;
     vec3 specular = ks * specularColor 
-    * NdotL * (f0 + Rs * (1.0 - f0));
+    * NdotL * Rs;
+    // * NdotL * (f0 + Rs * (1.0 - f0));
+
 
     return ambient + diffuse + specular;
 }
@@ -129,7 +131,9 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 
     vec3 diffuse  = diffuseColorK * pointLight.diffuseColor
     * NdotL;
     vec3 specular = ks * pointLight.specularColor 
-    * NdotL * (f0 + Rs * (1.0 - f0));
+    * NdotL * Rs;
+    // * NdotL * (f0 + Rs * (1.0 - f0));
+
     
     float dist = length(pointLight.position - fragPos);
     float attenuation = 1.0f / (pointLight.attenuationK.x 
@@ -170,7 +174,9 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir, vec3 dif
     * NdotL;
     
     vec3 specular = ks * SpotLight.specularColor 
-    * NdotL * (f0 + Rs * (1.0 - f0));
+    * NdotL * Rs;
+    // * NdotL * (f0 + Rs * (1.0 - f0));
+
     
     float dist = length(SpotLight.position - fragPos);
     float attenuation = 1.0f / (SpotLight.attenuationK.x 
@@ -193,7 +199,7 @@ void main()
     vec3 normal = normalize(Normal);
     vec3 ViewDir = normalize(viewPos - fragPos.xyz);
     vec3 result = vec3(0.0f);
-    if(true)
+    if(!albedo)
     {
         result = intensitySpotLight(SpotLight, normal, ViewDir, kd);
         result += intensityPointLight(pointLights[0], normal, ViewDir, kd);

@@ -3,11 +3,13 @@
 
 model::model()
 {
+	albedo = false;
 	kamb = glm::vec3(0.10);
 	kdif = glm::vec3(0.55);
 	kspec = glm::vec3(0.70);
-	shinniness = 5;
-	roughness = 0;
+	shinniness = 0.5f;
+	roughness = 0.1f;
+	position = glm::vec3(0.0f);
 }
 
 model::~model()
@@ -166,6 +168,34 @@ void model::loadMTL(std::string path)
 	}
 }
 
+model::Texture model::getTexture()
+{
+	return texture;
+}
+
+void model::setTexture(unsigned int diffID)
+{
+	texture.diffuse = diffID;
+	texture.specular = -1; //NO tiene text especular
+}
+
+void model::setTexture(unsigned int diffID, unsigned int specID)
+{
+	texture.diffuse = diffID;
+	texture.specular = specID;
+
+}
+
+glm::vec3 model::getPosition()
+{
+	return position;
+}
+
+void model::setPosition(glm::vec3 pos)
+{
+	position = pos;
+}
+
 glm::vec3 model::getKAmbient()
 {
 	return kamb;
@@ -214,4 +244,14 @@ float model::getRoughness()
 void model::setRoghness(float n)
 {
 	roughness = n;
+}
+
+bool model::getAlbedo()
+{
+	return albedo;
+}
+
+void model::setAlbedo(bool n)
+{
+	albedo = n;
 }

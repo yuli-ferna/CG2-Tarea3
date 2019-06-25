@@ -6,6 +6,7 @@ in vec2 texCoord;
 
 //Texture
 uniform sampler2D text;
+uniform sampler2D specMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -47,6 +48,7 @@ uniform vec3 ka;
 uniform vec3 kd;
 uniform vec3 ks;
 uniform float n;
+uniform bool albedo;
 
 // Fragment Color
 out vec4 color;
@@ -59,7 +61,7 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
     //Material with lightDir components
     vec3 ambient  = ka * ambientColor;
     if(!on)
-        return vec3(0.0f);
+        return ambient;
     vec3 diffuse  = diffuseColorK * diffuseColor * max(0.0, dot(Normal, LightDir));
     vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, halfwayDir)), n);
 
@@ -75,7 +77,7 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 
     
     vec3 ambient  = ka * pointLight.ambientColor;
     if(!pointLight.on)
-        return vec3(0.0f);
+        return ambient;
     vec3 diffuse  = diffuseColorK * pointLight.diffuseColor * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
@@ -108,7 +110,7 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir, vec3 dif
 
     vec3 ambient  = ka * SpotLight.ambientColor;
     if(!SpotLight.on)
-        return vec3(0.0f);
+        return ambient;
     vec3 diffuse  = diffuseColorK * SpotLight.diffuseColor * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * SpotLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
@@ -133,13 +135,23 @@ void main()
     vec3 normal = normalize(Normal);
     vec3 ViewDir = normalize(viewPos - fragPos.xyz);
     
-    vec3 result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
-    result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
-    result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
+    vec3 result;
+    if(!albedo)
+    {
+        result = intensitySpotLight(SpotLight, normal, ViewDir, kd);
+        result += intensityPointLight(pointLights[0], normal, ViewDir, kd);
+        result += intensityPointLight(pointLights[1], normal, ViewDir, kd);
+        result += intensiyLightDir(normal,ViewDir, kd);
     
-    result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
-    if(texture2D(text, texCoord).a < 0.1)
+    }else {
+        result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
+        result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
+        result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
+        result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
+        
+        if(texture2D(text, texCoord).a < 0.1)
             discard;
+    }
     color = vec4(result, 1.0f);
     
     //Texture

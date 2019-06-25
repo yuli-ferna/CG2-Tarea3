@@ -21,6 +21,7 @@ public:
 	int nModel;
 	float shinniness;
 	float roughness;
+	bool albedo;
 	glm::vec3 ambientColorMtl;
 	glm::vec3 diffuseColorMtl;
 	glm::vec3 specularColorMtl;

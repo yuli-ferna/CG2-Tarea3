@@ -34,9 +34,13 @@ const char *windowTitle = "Yuliana Fernandez";
 GLFWwindow *window;
 // Shader object
 Shader *shader, *shaderDirLight, *shaderPointLight, 
-*shaderAllLight, *shaderAllLightOrenayer, *shaderSpotLight, *shaderAllLightCookTorrence;
+*shaderAllLight, *shaderAllLightOrenayer, *shaderSpotLight, *shaderAllLightCookTorrence,
+*shaderSpecMap;
 
+//Textures
 unsigned int textureID;
+unsigned int textureID1,specularMap;
+std::vector<unsigned int> textures;
 
 //MVP Matrix
 glm::mat4 Model;
@@ -163,6 +167,7 @@ void initUserInterfaceValues()
 	modelAnt = 0;
 	Interface->shinniness = modelsObj[0]->getShinniness();
 	Interface->roughness = modelsObj[0]->getRoughness();
+	Interface->albedo = modelsObj[0]->getAlbedo();
 	Interface->ambientColorMtl = modelsObj[0]->getKAmbient();
 	Interface->diffuseColorMtl = modelsObj[0]->getKDiffuse();
 	Interface->specularColorMtl = modelsObj[0]->getKSpecular();
@@ -296,17 +301,71 @@ void initMVP()
 void buildGeometry()
 {
 	std::vector< std::string > paths;
+	std::vector < glm::vec3 > pos;
 	//Paths
 	/*paths.push_back(".\\assets\\models\\catS.obj");
 	paths.push_back(".\\assets\\models\\cubeS.obj");*/
 	//paths.push_back(".\\assets\\models\\pokeballS.obj");
 	//paths.push_back(".\\assets\\models\\cube1.obj");
-	paths.push_back(".\\assets\\models\\sphere1.obj");
-	paths.push_back(".\\assets\\models\\cube2.obj");
-	paths.push_back(".\\assets\\models\\cube3.obj");
+	//paths.push_back(".\\assets\\models\\sphere1.obj");
+	//paths.push_back(".\\assets\\models\\sphere1.obj");
+	//paths.push_back(".\\assets\\models\\sphere1.obj");
 	paths.push_back(".\\assets\\models\\planeS.obj");
+	paths.push_back(".\\assets\\models\\cube2.obj");
 
+	//Positions
+	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(4.0f, 0.0f, 0.0f));
+	pos.push_back(glm::vec3(-4.0f, 0.0f, 0.0f));
 	//paths.push_back(".\\assets\\models\\light1S.obj");
+	//Load 3 models
+	for (size_t i = 0; i < 3; i++)
+	{
+
+		object = object->loadObj(".\\assets\\models\\sphere1.obj");
+		// Creates on GPU the vertex array
+		glGenVertexArrays(1, &object->VAO[0]);
+		// Creates on GPU the vertex buffer object
+		glGenBuffers(3, object->VBO);
+		// Binds the vertex array to set all the its properties
+		glBindVertexArray(object->VAO[0]);
+
+		//vexter position object->VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
+		//vertex position position object->VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		//uv object->VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
+
+		//uv object->VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		//glBindVertexArray(0);
+		//color object->VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
+
+		//color object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glBindVertexArray(0);
+		object->setPosition(pos[i]);
+		modelsObj.push_back(object);
+	}
+	pos.clear();
+	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(4.0f));
+
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
 	{
@@ -348,13 +407,15 @@ void buildGeometry()
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glBindVertexArray(0);
+	
+		object->setPosition(pos[i]);
 		modelsObj.push_back(object);
 	}
-
+	
+	object = object->loadObj(".\\assets\\models\\pointlight.obj");
 	//Load Lights
 	for (size_t i = 0; i < N_POINTLIGHTS; i++)
 	{
-		object = object->loadObj(".\\assets\\models\\light1S.obj");
 
 		// Creates on GPU the vertex array
 		glGenVertexArrays(1, &object->VAO[0]);
@@ -392,6 +453,7 @@ void buildGeometry()
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glBindVertexArray(0);
+		object->setPosition(pos[i]);
 		lightsObj.push_back(object);
 	}
 }
@@ -483,13 +545,22 @@ bool init()
 	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
 	shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
+	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     // Loads all the geometry into the GPU
     buildGeometry();
     
 	// Loads the texture into the GPU
-    textureID = loadTexture("assets/textures/grass.png");
+	textureID1 = loadTexture("assets/textures/bricks2.jpg");
+	textures.push_back(textureID1);
+	textureID = loadTexture("assets/textures/grass.png");
+	textures.push_back(textureID);
+	textureID1 = loadTexture("assets/textures/container2.png");
+	textures.push_back(textureID);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	specularMap = loadTexture("assets/textures/container2_specular.png");
 
 	//Initializate MVP values
 	initMVP();
@@ -526,6 +597,7 @@ void processKeyboardInput(GLFWwindow *window)
 		delete shaderAllLight;
 		delete shaderAllLightOrenayer;
 		delete shaderAllLightCookTorrence;
+		delete shaderSpecMap;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
@@ -533,6 +605,7 @@ void processKeyboardInput(GLFWwindow *window)
 		shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
 		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 		shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
+		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 		shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
 		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
@@ -559,9 +632,12 @@ void processKeyboardInput(GLFWwindow *window)
 /*
 * Update MVP
 */
-void updateMVP()
+void updateMVP(int i)
 {
 	Model = glm::mat4(1.0f);
+
+	Model = glm::translate(glm::mat4(1.0f), modelsObj[i]->getPosition());
+	
 	View = Camara->getView();
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
@@ -578,7 +654,7 @@ void drawLights()
 	//Draw models of the scene
 	for (size_t i = 0; i < lightsObj.size(); i++)
 	{
-		updateMVP();
+		updateMVP(i);
 		Model = glm::translate(glm::mat4(1.0f), PointLight[i]->getLightPos());
 		glm::mat4 MVP = (Proj * View * Model);
 		shader->setMat4("MVP", MVP);
@@ -592,7 +668,6 @@ void drawLights()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		shader->setInt("text", 0);
-
 		// Binds the vertex array to be drawn
 		glBindVertexArray(lightsObj[i]->VAO[0]);
 
@@ -649,27 +724,28 @@ void renderObj(Shader* shaderActual, int i)
 	/*for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 	*/	//MVP trnasformations
-		updateMVP();/*
-		MVP = (Proj * View * Model);
-		shaderActual->setMat4("MVP", MVP);*/
+		updateMVP(i);
 		shaderActual->setMat4("Model", Model);
 		shaderActual->setMat4("View", View);
 		shaderActual->setMat4("Proj", Proj);
-		//shaderActual->setInt("Mtl", i);
-		//std::cout << Camara->getPosition().x << ' ' << Camara->getPosition().y << ' ' << Camara->getPosition().z << std::endl;
-	
+		
 		//Material
 		shaderActual->setVec3("ka", modelsObj[i]->getKAmbient());
 		shaderActual->setVec3("kd", modelsObj[i]->getKDiffuse());
 		shaderActual->setVec3("ks", modelsObj[i]->getKSpecular());
 		shaderActual->setFloat("n", modelsObj[i]->getShinniness());
 		shaderActual->setFloat("roughness", modelsObj[i]->getRoughness());
+		shaderActual->setBool("albedo", modelsObj[i]->getAlbedo());
 
 		//Texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureID);
-		shaderActual->setInt("text", 0);
-
+		
+		glActiveTexture(GL_TEXTURE0 + textures[i] - 1);
+		glBindTexture(GL_TEXTURE_2D, textures[i]);
+		shaderActual->setInt("text", textures[i] - 1);
+		
+		glActiveTexture(GL_TEXTURE0 + specularMap - 1);
+		glBindTexture(GL_TEXTURE_2D, specularMap);
+		shaderActual->setInt("specMap", specularMap - 1);
 		// Binds the vertex array to be drawn
 		glBindVertexArray(modelsObj[i]->VAO[0]);
     
@@ -687,6 +763,7 @@ void updateUserInterface()
 {
 	//Model
 	int nMod = Interface->nModel;
+	if (nMod >= modelsObj.size()) nMod = modelsObj.size() - 1;
 	if (modelAnt != nMod)
 	{
 		//Nueva selección 
@@ -696,6 +773,7 @@ void updateUserInterface()
 		Interface->specularColorMtl = modelsObj[nMod]->getKSpecular();
 		Interface->shinniness = modelsObj[nMod]->getShinniness();
 		Interface->roughness = modelsObj[nMod]->getRoughness();
+		Interface->albedo = modelsObj[nMod]->getAlbedo();
 		modelAnt = nMod;
 	}
 	modelsObj[nMod]->setKAmbient(Interface->ambientColorMtl);
@@ -703,6 +781,7 @@ void updateUserInterface()
 	modelsObj[nMod]->setKSpecular(Interface->specularColorMtl);
 	modelsObj[nMod]->setShinniness(Interface->shinniness);
 	modelsObj[nMod]->setRoghness(Interface->roughness);
+	modelsObj[nMod]->setAlbedo(Interface->albedo);
 	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
 
 	//Light dir
@@ -771,7 +850,8 @@ void render()
 	//renderObj(shaderAllLightOrenayer, 0);
 	renderObj(shaderAllLight, 1);
 	renderObj(shaderAllLightOrenayer, 2);
-	renderObj(shaderAllLightOrenayer, 3);
+	renderObj(shaderAllLight, 3);
+	renderObj(shaderSpecMap, 4);
 
 	drawLights();
 
@@ -829,7 +909,8 @@ int main(int argc, char const *argv[])
     update();
 
     // Deletes the texture from the gpu
-    glDeleteTextures(1, &textureID);
+	glDeleteTextures(1, &textureID);
+	glDeleteTextures(1, &textureID1);
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
@@ -850,6 +931,7 @@ int main(int argc, char const *argv[])
 	delete shaderAllLight;
 	delete shaderAllLightOrenayer;
 	delete shaderAllLightCookTorrence;
+	delete shaderSpecMap;
 	delete Camara;
 	delete SpotLight;
 	delete directionalLight;

@@ -6,6 +6,7 @@ in vec2 texCoord;
 
 //Texture
 uniform sampler2D text;
+uniform sampler2D sepcMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -48,6 +49,7 @@ uniform vec3 kd;
 uniform vec3 ks;
 uniform float n;
 uniform float roughness;
+uniform bool albedo;
 
 // Fragment Color
 out vec4 color;
@@ -154,13 +156,23 @@ void main()
     vec3 ViewDir = normalize(viewPos - fragPos.xyz);
     
     vec3 result;
-    result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
-    result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
-    result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
+    if(!albedo)
+    {
+        result = intensitySpotLight(SpotLight, normal, ViewDir, kd);
+        result += intensityPointLight(pointLights[0], normal, ViewDir, kd);
+        result += intensityPointLight(pointLights[1], normal, ViewDir, kd);    
+        result += intensiyLightDir(normal,ViewDir, kd);
     
-    result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
-    if(texture2D(text, texCoord).a < 0.1)
-        discard;
+    }else {
+        result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
+        result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
+        result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
+        
+        result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
+        if(texture2D(text, texCoord).a < 0.1)
+            discard;
+    
+    }
     color = vec4(result, 1.0f);
     
     //Texture
