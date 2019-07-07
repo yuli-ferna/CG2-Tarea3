@@ -31,7 +31,10 @@ public:
 	bool albedo;
 	float shinniness;
 	float roughness;
-	
+	float indexMaterial;
+	float indexAmbient;
+	float intensityParalax;
+	float percentAmbient;
 	//Textures 
 	struct Texture
 	{
@@ -61,6 +64,14 @@ public:
 	void setShinniness(float n);
 	float getRoughness();
 	void setRoghness(float n);
+	float getindexMaterial();
+	void setindexMaterial(float n);
+	float getindexAmbient();
+	void setindexAmbient(float n);
+	float getintensityParalax();
+	void setintensityParalax(float n);
+	float getpercentAmbient();
+	void setpercentAmbient(float n);
 	bool getAlbedo();
 	void setAlbedo(bool n);
 	char getShader();

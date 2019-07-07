@@ -18,7 +18,7 @@ public:
 	glm::vec3 floatpointToVec3(float* arr);
 	
 	//Shaders
-	typedef enum { BLINN, COOK, OREN, NORM, PARAL, CUBEM, TRANS } Shader;
+	typedef enum { BLINN, COOK, OREN, NORM, PARAL, REFL, REFR, TRANS } Shader;
 	TwType shaderType;
 	Shader shader;
 
@@ -26,6 +26,10 @@ public:
 	int nModel;
 	float shinniness;
 	float roughness;
+	float indexMaterial;
+	float indexAmbient;
+	float intensityParalax;
+	float percentAmbient;
 	bool albedo;
 	glm::vec3 ambientColorMtl;
 	glm::vec3 diffuseColorMtl;

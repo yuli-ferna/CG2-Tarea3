@@ -34,8 +34,8 @@ const char *windowTitle = "Yuliana Fernandez";
 GLFWwindow *window;
 // Shader object
 Shader *shader, *shaderDirLight, *shaderPointLight, 
-*shaderAllLight, *shaderAllLightOrenayer, *shaderSpotLight, *shaderAllLightCookTorrence,
-*shaderSpecMap, *shaderSkybox;
+*shaderAllLight, *shaderAllLightOrenayer, *shaderEnviroment, *shaderAllLightCookTorrence,
+*shaderSpecMap, *shaderSkybox, *shaderRefraction;
 
 //Textures
 unsigned int textureID;
@@ -171,6 +171,10 @@ void initUserInterfaceValues()
 	Interface->nModel = 0;
 	modelAnt = 0;
 	Interface->shinniness = modelsObj[0]->getShinniness();
+	Interface->indexMaterial = modelsObj[0]->getindexMaterial();
+	Interface->intensityParalax = modelsObj[0]->getintensityParalax();
+	Interface->indexAmbient = modelsObj[0]->getindexAmbient();
+	Interface->percentAmbient = modelsObj[0]->getpercentAmbient();
 	Interface->roughness = modelsObj[0]->getRoughness();
 	Interface->albedo = modelsObj[0]->getAlbedo();
 	Interface->ambientColorMtl = modelsObj[0]->getKAmbient();
@@ -450,7 +454,7 @@ void buildGeometry()
 
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
-	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(4.0f));
 
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
@@ -559,7 +563,7 @@ unsigned int loadTexture(const char *path)
     // Loads the texture
     int textureWidth, textureHeight, numberOfChannels;
     // Flips the texture when loads it because in opengl the texture coordinates are flipped
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(true);
     // Loads the texture file data
     unsigned char *data = stbi_load(path, &textureWidth, &textureHeight, &numberOfChannels, 0);
     if (data)
@@ -688,11 +692,12 @@ bool init()
 
     // Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-	shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
-	shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
-	shaderSpotLight = new Shader("assets/shaders/lightSpot.vert", "assets/shaders/lightSpot.frag");
+	/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+	shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");*/
+	shaderEnviroment = new Shader("assets/shaders/enviromentMapp.vert", "assets/shaders/enviromentMapp.frag");
 	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
+	shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 	shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
 	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
@@ -733,20 +738,22 @@ void processKeyboardInput(GLFWwindow *window)
     {
         // Reloads the shader
 		delete shader;
-		delete shaderDirLight;
-		delete shaderPointLight;
-		delete shaderSpotLight;
+	/*	delete shaderDirLight;
+		delete shaderPointLight;*/
+		delete shaderEnviroment;
 		delete shaderAllLight;
 		delete shaderAllLightOrenayer;
+		delete shaderRefraction;
 		delete shaderAllLightCookTorrence;
 		delete shaderSpecMap;
 		delete shaderSkybox;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-		shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
-		shaderSpotLight = new Shader("assets/shaders/lightSpot.vert", "assets/shaders/lightSpot.frag");
-		shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
+		/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");*/
+		shaderEnviroment = new Shader("assets/shaders/enviromentMapp.vert", "assets/shaders/enviromentMapp.frag");
+		/*shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");*/
 		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+		shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 		shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
 		shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
@@ -881,6 +888,9 @@ void renderObj(Shader* shaderActual, int i)
 		shaderActual->setVec3("kd", modelsObj[i]->getKDiffuse());
 		shaderActual->setVec3("ks", modelsObj[i]->getKSpecular());
 		shaderActual->setFloat("n", modelsObj[i]->getShinniness());
+		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
+		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
+		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
 		shaderActual->setFloat("roughness", modelsObj[i]->getRoughness());
 		shaderActual->setBool("albedo", modelsObj[i]->getAlbedo());
 
@@ -922,6 +932,11 @@ void updateUserInterface()
 		Interface->roughness = modelsObj[nMod]->getRoughness();
 		Interface->albedo = modelsObj[nMod]->getAlbedo();
 		Interface->setShader(modelsObj[nMod]->getShader());
+		Interface->indexAmbient = modelsObj[nMod]->getindexAmbient();
+		Interface->indexMaterial = modelsObj[nMod]->getindexMaterial();
+		Interface->percentAmbient = modelsObj[nMod]->getpercentAmbient();
+		Interface->intensityParalax = modelsObj[nMod]->getintensityParalax();
+
 		modelAnt = nMod;
 	}
 	modelsObj[nMod]->setKAmbient(Interface->ambientColorMtl);
@@ -929,6 +944,11 @@ void updateUserInterface()
 	modelsObj[nMod]->setKSpecular(Interface->specularColorMtl);
 	modelsObj[nMod]->setShinniness(Interface->shinniness);
 	modelsObj[nMod]->setRoghness(Interface->roughness);
+	modelsObj[nMod]->setindexMaterial(Interface->indexMaterial);
+	modelsObj[nMod]->setindexAmbient(Interface->indexAmbient);
+	modelsObj[nMod]->setpercentAmbient(Interface->percentAmbient);
+	modelsObj[nMod]->setintensityParalax(Interface->intensityParalax);
+
 	modelsObj[nMod]->setAlbedo(Interface->albedo);
 	modelsObj[nMod]->setShader(Interface->getShader());
 	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
@@ -1028,9 +1048,13 @@ void render()
 			case 'p':
 				renderObj(shaderAllLight, i);
 				break;
-			//Reflection and refraction
+			//Refraction
 			case 'r':
-				renderObj(shaderAllLight, i);
+				renderObj(shaderRefraction, i);
+				break;
+			//Reflection
+			case 'l':
+				renderObj(shaderEnviroment, i);
 				break;
 			//Objetos semitransparents
 			case 't':
@@ -1117,11 +1141,12 @@ int main(int argc, char const *argv[])
 
 	// Destroy the shader
 	delete shader;
-	delete shaderDirLight;
-	delete shaderPointLight;
-	delete shaderSpotLight;
+	//delete shaderDirLight;
+	//delete shaderPointLight;
+	delete shaderEnviroment;
 	delete shaderAllLight;
 	delete shaderAllLightOrenayer;
+	delete shaderRefraction;
 	delete shaderAllLightCookTorrence;
 	delete shaderSpecMap;
 	delete shaderSkybox;

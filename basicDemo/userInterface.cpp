@@ -20,9 +20,10 @@ userInterface::userInterface()
 	direction = glm::vec3(3.0f, -4.0f, -2.0f);
 
 	TwEnumVal shaders[] = { {BLINN, "Blinn Phonn"}, {COOK, "Cook Torrance"}, {OREN, "Oren Nayar"},
- {NORM, "Normal Mapping"}, {PARAL, "Occlussion parallax mapping"}, {CUBEM, "Cube map"}, {TRANS, "Semitransparent"} }; 
+ {NORM, "Normal Mapping"}, {PARAL, "Occlussion parallax mapping"}, {REFR, "Refraction"}, {REFL, "Reflection"}, 
+	{TRANS, "Semitransparent"} };
 	shader = BLINN;
-	shaderType = TwDefineEnum("shaderType", shaders, 7);
+	shaderType = TwDefineEnum("shaderType", shaders, 8);
 
 	TwAddVarRW(mUserInterface, "nModel", TW_TYPE_UINT32, &nModel, " group='Modelselect' min=0 label='Select model' step=1 ");
 	TwAddVarRW(mUserInterface, "Display", shaderType, &shader, " group='Modelselect' label='Shader' ");
@@ -32,6 +33,11 @@ userInterface::userInterface()
 	TwAddVarRW(mUserInterface, "specularColorMtlDir", TW_TYPE_COLOR3F, &specularColorMtl, "label='Specular Mtl' group='Modelselect'");
 	TwAddVarRW(mUserInterface, "shinniness", TW_TYPE_FLOAT, &shinniness, "label='Shinniness' min=0 group='Modelselect' step=0.01 ");
 	TwAddVarRW(mUserInterface, "roughness", TW_TYPE_FLOAT, &roughness, "label='Roughness' min=0 group='Modelselect' step=0.01 ");
+	TwAddVarRW(mUserInterface, "indexMaterial", TW_TYPE_FLOAT, &indexMaterial, "label='indexMaterial' min=0 group='Modelselect' step=0.01 ");
+	TwAddVarRW(mUserInterface, "indexAmbient", TW_TYPE_FLOAT, &indexAmbient, "label='indexAmbient' min=0 group='Modelselect' step=0.01 ");
+	TwAddVarRW(mUserInterface, "intensityParalax", TW_TYPE_FLOAT, &intensityParalax, "label='intensityParalax' min=0 group='Modelselect' step=0.01 ");
+	TwAddVarRW(mUserInterface, "percentAmbient", TW_TYPE_FLOAT, &percentAmbient, "label='percentAmbient' min=0 group='Modelselect' step=0.01 ");
+
 	//TwDefine("Tarea/MaterialColor group='Modelselect' label='Material Color'");
 
 	TwAddSeparator(mUserInterface, "sep1", NULL);
@@ -79,7 +85,8 @@ char userInterface::getShader()
 	if (shader == OREN) return 'o';
 	if (shader == NORM) return 'n';
 	if (shader == PARAL) return 'p';
-	if (shader == CUBEM) return 'r';
+	if (shader == REFR) return 'r';
+	if (shader == REFL) return 'l';
 	if (shader == TRANS) return 't';
 	return NULL;
 }
@@ -92,7 +99,8 @@ void userInterface::setShader(char type)
 	else if (type == 'o') shader = OREN;
 	else if (type == 'n') shader = NORM;
 	else if (type == 'p') shader = PARAL;
-	else if (type == 'r') shader = CUBEM;
+	else if (type == 'r') shader = REFR;
+	else if (type == 'l') shader = REFL;
 	else if (type == 't') shader = TRANS;
 }
 

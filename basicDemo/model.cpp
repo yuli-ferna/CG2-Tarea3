@@ -7,8 +7,12 @@ model::model()
 	kamb = glm::vec3(0.10);
 	kdif = glm::vec3(0.55);
 	kspec = glm::vec3(0.70);
-	shinniness = 0.5f;
+	shinniness = 55.0f;
 	roughness = 0.1f;
+	indexMaterial = 1.309;
+	indexAmbient = 1.309;
+	intensityParalax = 1.309;
+	percentAmbient = 1.309;
 	position = glm::vec3(0.0f);
 	shaderType = 'b';
 }
@@ -19,8 +23,12 @@ model::model(glm::vec3 pos)
 	kamb = glm::vec3(0.10);
 	kdif = glm::vec3(0.55);
 	kspec = glm::vec3(0.70);
-	shinniness = 0.5f;
+	shinniness = 55.0f;
 	roughness = 0.1f;
+	indexMaterial = 1.309;
+	indexAmbient = 1.309;
+	intensityParalax = 1.309;
+	percentAmbient = 1.309;
 	position = pos;
 	shaderType = 'b';
 
@@ -355,6 +363,46 @@ float model::getRoughness()
 void model::setRoghness(float n)
 {
 	roughness = n;
+}
+
+float model::getindexMaterial()
+{
+	return indexMaterial;
+}
+
+void model::setindexMaterial(float n)
+{
+	indexMaterial = n;
+}
+
+float model::getindexAmbient()
+{
+	return indexAmbient;
+}
+
+void model::setindexAmbient(float n)
+{
+	indexAmbient = n;
+}
+
+float model::getintensityParalax()
+{
+	return intensityParalax;
+}
+
+void model::setintensityParalax(float n)
+{
+	intensityParalax = n;
+}
+
+float model::getpercentAmbient()
+{
+	return percentAmbient;
+}
+
+void model::setpercentAmbient(float n)
+{
+	percentAmbient = n;
 }
 
 bool model::getAlbedo()
