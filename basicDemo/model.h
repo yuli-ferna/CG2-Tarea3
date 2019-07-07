@@ -26,7 +26,8 @@ public:
 	glm::vec3 kdif; //Componente difusa
 	glm::vec3 kspec;//Componente especular
 	glm::vec3 position;//position (default=vec3(0.0f))
-	
+
+	char shaderType;
 	bool albedo;
 	float shinniness;
 	float roughness;
@@ -62,6 +63,8 @@ public:
 	void setRoghness(float n);
 	bool getAlbedo();
 	void setAlbedo(bool n);
+	char getShader();
+	void setShader(char n);
 
 private:
 

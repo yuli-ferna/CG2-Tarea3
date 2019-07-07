@@ -10,6 +10,7 @@ model::model()
 	shinniness = 0.5f;
 	roughness = 0.1f;
 	position = glm::vec3(0.0f);
+	shaderType = 'b';
 }
 
 model::model(glm::vec3 pos)
@@ -21,6 +22,8 @@ model::model(glm::vec3 pos)
 	shinniness = 0.5f;
 	roughness = 0.1f;
 	position = pos;
+	shaderType = 'b';
+
 }
 
 model::~model()
@@ -362,4 +365,14 @@ bool model::getAlbedo()
 void model::setAlbedo(bool n)
 {
 	albedo = n;
+}
+
+char model::getShader()
+{
+	return shaderType;
+}
+
+void model::setShader(char n)
+{
+	shaderType = n;
 }

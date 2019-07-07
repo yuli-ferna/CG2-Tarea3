@@ -17,6 +17,11 @@ public:
 	void setLightDir(glm::vec3 lightD);
 	glm::vec3 floatpointToVec3(float* arr);
 	
+	//Shaders
+	typedef enum { BLINN, COOK, OREN, NORM, PARAL, CUBEM, TRANS } Shader;
+	TwType shaderType;
+	Shader shader;
+
 	//Models
 	int nModel;
 	float shinniness;
@@ -53,5 +58,8 @@ public:
 
 	glm::vec3 direction;
 	userInterface();
+	char getShader();
+	void setShader(char type);
+
 private:
 };

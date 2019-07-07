@@ -19,7 +19,13 @@ userInterface::userInterface()
 
 	direction = glm::vec3(3.0f, -4.0f, -2.0f);
 
+	TwEnumVal shaders[] = { {BLINN, "Blinn Phonn"}, {COOK, "Cook Torrance"}, {OREN, "Oren Nayar"},
+ {NORM, "Normal Mapping"}, {PARAL, "Occlussion parallax mapping"}, {CUBEM, "Cube map"}, {TRANS, "Semitransparent"} }; 
+	shader = BLINN;
+	shaderType = TwDefineEnum("shaderType", shaders, 7);
+
 	TwAddVarRW(mUserInterface, "nModel", TW_TYPE_UINT32, &nModel, " group='Modelselect' min=0 label='Select model' step=1 ");
+	TwAddVarRW(mUserInterface, "Display", shaderType, &shader, " group='Modelselect' label='Shader' ");
 	TwAddVarRW(mUserInterface, "albedo", TW_TYPE_BOOLCPP, &albedo, " group='Modelselect' label='Diffuse map' ");
 	TwAddVarRW(mUserInterface, "ambientalColorMtlDir", TW_TYPE_COLOR3F, &ambientColorMtl, "label='Ambiental Mtl' group='Modelselect'");
 	TwAddVarRW(mUserInterface, "diffuseColorMtlDir", TW_TYPE_COLOR3F, &diffuseColorMtl, "label='Diffuse Mtl' group='Modelselect'");
@@ -63,6 +69,31 @@ userInterface::userInterface()
 	TwAddVarRW(mUserInterface, "cuttof", TW_TYPE_FLOAT, &cuttof, " group='SpotLight' min=0 step=0.01 ");
 	TwAddVarRW(mUserInterface, "outerCuttof", TW_TYPE_FLOAT, &outerCuttof, " group='SpotLight' min=0 step=0.01 ");
 
+}
+
+char userInterface::getShader()
+{
+
+	if (shader == BLINN) return 'b';
+	if (shader == COOK) return 'c';
+	if (shader == OREN) return 'o';
+	if (shader == NORM) return 'n';
+	if (shader == PARAL) return 'p';
+	if (shader == CUBEM) return 'r';
+	if (shader == TRANS) return 't';
+	return NULL;
+}
+
+void userInterface::setShader(char type)
+{
+
+	if      (type == 'b') shader = BLINN;
+	else if (type == 'c') shader = COOK;
+	else if (type == 'o') shader = OREN;
+	else if (type == 'n') shader = NORM;
+	else if (type == 'p') shader = PARAL;
+	else if (type == 'r') shader = CUBEM;
+	else if (type == 't') shader = TRANS;
 }
 
 glm::vec3 userInterface::getLightDir()

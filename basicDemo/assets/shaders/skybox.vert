@@ -11,5 +11,6 @@ out vec3 texCoord;
 void main()
 {
     texCoord = vertexPosition;
-    gl_Position = Proj * View * (vec4(vertexPosition, 1.0f));
+    vec4 pos = Proj * View * vec4(vertexPosition, 1.0);
+    gl_Position = pos.xyww;
 }

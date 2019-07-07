@@ -559,7 +559,7 @@ unsigned int loadTexture(const char *path)
     // Loads the texture
     int textureWidth, textureHeight, numberOfChannels;
     // Flips the texture when loads it because in opengl the texture coordinates are flipped
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(false);
     // Loads the texture file data
     unsigned char *data = stbi_load(path, &textureWidth, &textureHeight, &numberOfChannels, 0);
     if (data)
@@ -921,6 +921,7 @@ void updateUserInterface()
 		Interface->shinniness = modelsObj[nMod]->getShinniness();
 		Interface->roughness = modelsObj[nMod]->getRoughness();
 		Interface->albedo = modelsObj[nMod]->getAlbedo();
+		Interface->setShader(modelsObj[nMod]->getShader());
 		modelAnt = nMod;
 	}
 	modelsObj[nMod]->setKAmbient(Interface->ambientColorMtl);
@@ -929,6 +930,7 @@ void updateUserInterface()
 	modelsObj[nMod]->setShinniness(Interface->shinniness);
 	modelsObj[nMod]->setRoghness(Interface->roughness);
 	modelsObj[nMod]->setAlbedo(Interface->albedo);
+	modelsObj[nMod]->setShader(Interface->getShader());
 	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
 
 	//Light dir
@@ -979,14 +981,13 @@ void drawSkybox()
 
 	shaderSkybox->setMat4("View", view);
 	shaderSkybox->setMat4("Proj", Proj);
-	glDepthFunc(GL_LEQUAL);  
+	shaderSkybox->setInt("skybox", 0);
 
 	// skybox cube
+	glDepthFunc(GL_LEQUAL);  
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-	shaderSkybox->setInt("skybox", 0);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS);
@@ -1004,7 +1005,40 @@ void render()
 	
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
-		renderObj(shaderAllLight, i);
+		char shad = modelsObj[i]->getShader();
+		switch (shad)
+		{
+			//Blinn
+			case 'b':
+			renderObj(shaderAllLight, i);
+				break;
+			//Cook torrance
+			case 'c':
+			renderObj(shaderAllLightCookTorrence, i);
+				break;
+			//Oren nayar
+			case 'o':
+			renderObj(shaderAllLightOrenayer, i);
+				break;
+			//Normal mapping
+			case 'n':
+				renderObj(shaderAllLight, i);
+				break;
+			//Occlussion parallax mapping
+			case 'p':
+				renderObj(shaderAllLight, i);
+				break;
+			//Reflection and refraction
+			case 'r':
+				renderObj(shaderAllLight, i);
+				break;
+			//Objetos semitransparents
+			case 't':
+				renderObj(shaderAllLight, i);
+				break;
+			default:
+				break;
+		}
 	}
 
 	//Lights
