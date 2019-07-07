@@ -16,6 +16,7 @@ public:
 	//string name;
 	std::vector<glm::vec3> vertex, normal, color;
 	std::vector<glm::vec2> uv;
+	int numVertex;
 	// Index (GPU) of the geometry buffer
 	unsigned int VBO[3];
 	// Index (GPU) vertex array object
@@ -38,9 +39,11 @@ public:
 	};
 	Texture texture;
 	model();
+	model(glm::vec3 pos);
 	~model();
 
-	model* loadObj(std::string path);
+	model* loadObj(std::string path, glm::vec3 position);
+	bool loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<glm::vec3>& norm, std::vector<glm::vec2>& uvText);
 	void loadMTL(std::string path);
 	Texture getTexture();
 	void setTexture(unsigned int diffID);

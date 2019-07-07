@@ -35,12 +35,17 @@ GLFWwindow *window;
 // Shader object
 Shader *shader, *shaderDirLight, *shaderPointLight, 
 *shaderAllLight, *shaderAllLightOrenayer, *shaderSpotLight, *shaderAllLightCookTorrence,
-*shaderSpecMap;
+*shaderSpecMap, *shaderSkybox;
 
 //Textures
 unsigned int textureID;
 unsigned int textureID1,specularMap;
+unsigned int cubemapTexture;
 std::vector<unsigned int> textures;
+
+//skybox
+unsigned int skyboxVAO, skyboxVBO;
+
 
 //MVP Matrix
 glm::mat4 Model;
@@ -293,6 +298,133 @@ void initMVP()
 	Proj = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 190.0f);
 
 }
+
+void buildGeom(std::string path, std::vector< glm::vec3 > position)
+{
+	std::vector< glm::vec3 > Vert;
+	std::vector< glm::vec3 > Normal;
+	std::vector< glm::vec2 > UV;
+	//Positions
+
+	model *obj = new model(position[0]);
+	obj->loadObj(path, Vert, Normal, UV);
+	//obj = obj->loadObj(".\\assets\\models\\sphere1.obj", pos[0]);
+	//int nMod = 3;
+	//Load 3 models
+	unsigned int VAOForm[1],  VBOForm[3], numVertex = Vert.size();
+	// Creates on GPU the vertex array
+	glGenVertexArrays(1, &VAOForm[0]);
+	// Creates on GPU the vertex buffer obj
+	glGenBuffers(3, VBOForm);
+	// Binds the vertex array to set all the its properties
+	glBindVertexArray(VAOForm[0]);
+
+	//vexter position VBOForm
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Vert.size(), &Vert[0], GL_STATIC_DRAW);
+	//vertex position position VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	//uv VBOForm
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * UV.size(), &UV[0], GL_STATIC_DRAW);
+
+	//uv VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	//glBindVertexArray(0);
+	//color VBOForm
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Normal.size(), &Normal[0], GL_STATIC_DRAW);
+
+	//color object.VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(0);
+	
+	
+	//Se encolan los modelos que tienen el mismo obj
+	model* obj1;
+	for (size_t i = 0; i < position.size(); i++)
+	{
+		model* obj1 = new model(position[i]);
+		//obj1->setPosition(pos[i]);
+		obj1->VBO[0] = VBOForm[0];
+		obj1->VBO[1] = VBOForm[1];
+		obj1->VBO[2] = VBOForm[2];
+		obj1->VAO[0] = VAOForm[0];
+		obj1->numVertex = numVertex;
+		obj1->setPosition(position[i]);
+		modelsObj.push_back(obj1);
+	}
+	
+	position.clear();
+}
+
+void buildSkyBox() 
+{
+	float skyboxVertices[] = {
+		// positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};
+
+	// skybox VAO
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+}
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
@@ -302,74 +434,28 @@ void buildGeometry()
 {
 	std::vector< std::string > paths;
 	std::vector < glm::vec3 > pos;
-	//Paths
-	/*paths.push_back(".\\assets\\models\\catS.obj");
-	paths.push_back(".\\assets\\models\\cubeS.obj");*/
-	//paths.push_back(".\\assets\\models\\pokeballS.obj");
-	//paths.push_back(".\\assets\\models\\cube1.obj");
-	//paths.push_back(".\\assets\\models\\sphere1.obj");
-	//paths.push_back(".\\assets\\models\\sphere1.obj");
-	//paths.push_back(".\\assets\\models\\sphere1.obj");
-	paths.push_back(".\\assets\\models\\planeS.obj");
-	paths.push_back(".\\assets\\models\\cube2.obj");
-
+	
+	
+	
 	//Positions
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(4.0f, 0.0f, 0.0f));
 	pos.push_back(glm::vec3(-4.0f, 0.0f, 0.0f));
-	//paths.push_back(".\\assets\\models\\light1S.obj");
-	//Load 3 models
-	for (size_t i = 0; i < 3; i++)
-	{
+	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
+	buildGeom(".\\assets\\models\\cube1.obj", pos);
 
-		object = object->loadObj(".\\assets\\models\\sphere1.obj");
-		// Creates on GPU the vertex array
-		glGenVertexArrays(1, &object->VAO[0]);
-		// Creates on GPU the vertex buffer object
-		glGenBuffers(3, object->VBO);
-		// Binds the vertex array to set all the its properties
-		glBindVertexArray(object->VAO[0]);
+	//Paths
+	paths.push_back(".\\assets\\models\\planeS.obj");
+	paths.push_back(".\\assets\\models\\cube2.obj");
 
-		//vexter position object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
-		//vertex position position object->VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-		//uv object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
-
-		//uv object->VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-		//glBindVertexArray(0);
-		//color object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
-
-		//color object.VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glBindVertexArray(0);
-		object->setPosition(pos[i]);
-		modelsObj.push_back(object);
-	}
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
-	pos.push_back(glm::vec3(4.0f));
+	pos.push_back(glm::vec3(0.0f));
 
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
 	{
-		object = object->loadObj(paths[i]);
+		object = object->loadObj(paths[i], pos[i]);
 
 		// Creates on GPU the vertex array
 		glGenVertexArrays(1, &object->VAO[0]);
@@ -408,11 +494,11 @@ void buildGeometry()
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glBindVertexArray(0);
 	
-		object->setPosition(pos[i]);
+		//object->setPosition(pos[i]);
 		modelsObj.push_back(object);
 	}
 	
-	object = object->loadObj(".\\assets\\models\\pointlight.obj");
+	object = object->loadObj(".\\assets\\models\\pointlight.obj", glm::vec3(0.0f));
 	//Load Lights
 	for (size_t i = 0; i < N_POINTLIGHTS; i++)
 	{
@@ -456,6 +542,9 @@ void buildGeometry()
 		object->setPosition(pos[i]);
 		lightsObj.push_back(object);
 	}
+
+	//Load skybox
+	buildSkyBox();
 }
 /**
  * Loads a texture into the GPU
@@ -513,6 +602,7 @@ unsigned int loadTexture(const char *path)
 
     return id;
 }
+
 void initLights() 
 {
 	pointLight *light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -522,6 +612,65 @@ void initLights()
 
 	PointLight.push_back(light1);
 	PointLight.push_back(light2);
+}
+
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(false);
+	for (unsigned int i = 0; i < faces.size(); i++)
+	{
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureID;
+}
+
+void initTexture() {
+
+	textureID1 = loadTexture("assets/textures/bricks2.jpg");
+	textures.push_back(textureID1);
+	textureID = loadTexture("assets/textures/grass.png");
+	textures.push_back(textureID);
+	textureID1 = loadTexture("assets/textures/container2.png");
+	textures.push_back(textureID);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	specularMap = loadTexture("assets/textures/container2_specular.png");
+	//Load skybox
+	std::vector<std::string> faces
+	{
+		"assets/textures/right.jpg",
+		"assets/textures/left.jpg",
+		"assets/textures/top.jpg",
+		"assets/textures/bottom.jpg",
+		"assets/textures/front.jpg",
+		"assets/textures/back.jpg"
+	};
+	cubemapTexture = loadCubemap(faces);
+	//textures.push_back(cubemapTexture);
+
 }
 
 /**
@@ -546,21 +695,14 @@ bool init()
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
 	shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
 	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
+	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     // Loads all the geometry into the GPU
     buildGeometry();
     
 	// Loads the texture into the GPU
-	textureID1 = loadTexture("assets/textures/bricks2.jpg");
-	textures.push_back(textureID1);
-	textureID = loadTexture("assets/textures/grass.png");
-	textures.push_back(textureID);
-	textureID1 = loadTexture("assets/textures/container2.png");
-	textures.push_back(textureID);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	specularMap = loadTexture("assets/textures/container2_specular.png");
+	initTexture();
 
 	//Initializate MVP values
 	initMVP();
@@ -598,6 +740,7 @@ void processKeyboardInput(GLFWwindow *window)
 		delete shaderAllLightOrenayer;
 		delete shaderAllLightCookTorrence;
 		delete shaderSpecMap;
+		delete shaderSkybox;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
@@ -605,6 +748,7 @@ void processKeyboardInput(GLFWwindow *window)
 		shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");
 		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 		shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
+		shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 		shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
 		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
@@ -668,6 +812,7 @@ void drawLights()
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		shader->setInt("text", 0);
+
 		// Binds the vertex array to be drawn
 		glBindVertexArray(lightsObj[i]->VAO[0]);
 
@@ -675,6 +820,8 @@ void drawLights()
 		glDrawArrays(GL_TRIANGLES, 0, lightsObj[i]->vertex.size());
 
 	}
+
+
 	glBindVertexArray(0);
 }
 
@@ -750,11 +897,11 @@ void renderObj(Shader* shaderActual, int i)
 		glBindVertexArray(modelsObj[i]->VAO[0]);
     
 		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->vertex.size());
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
 		
 	/*}
 */
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
 
 
 }
@@ -823,6 +970,27 @@ void updateUserInterface()
 
 	//std::cout << Interface->onLightDir << std::endl};
 }
+
+void drawSkybox()
+{
+	// Draw skybox as last
+	shaderSkybox->use();
+	glm::mat4 view = glm::mat4(glm::mat3(Camara->getView()));	// Remove any translation component of the view matrix
+
+	shaderSkybox->setMat4("View", view);
+	shaderSkybox->setMat4("Proj", Proj);
+	glDepthFunc(GL_LEQUAL);  
+
+	// skybox cube
+	glBindVertexArray(skyboxVAO);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	shaderSkybox->setInt("skybox", 0);
+	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
+}
 /**
  * Render Function
  * */
@@ -832,28 +1000,18 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     /** Draws code goes here **/
     // Use the shader
-
 	Shader* shaderActual = shaderAllLight;
-	/*for (size_t i = 0; i < modelsObj.size(); i++)
-	{	
-		if (i == 0)
-		{
-			renderObj(shaderAllLightOrenayer,i);
-		}
-		else
-		{
-			renderObj(shaderAllLight, i);		
+	
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		renderObj(shaderAllLight, i);
+	}
 
-		}
-	}*/
-	renderObj(shaderAllLightCookTorrence, 0);
-	//renderObj(shaderAllLightOrenayer, 0);
-	renderObj(shaderAllLight, 1);
-	renderObj(shaderAllLightOrenayer, 2);
-	renderObj(shaderAllLight, 3);
-	renderObj(shaderSpecMap, 4);
-
+	//Lights
 	drawLights();
+	
+	//Skybox
+	drawSkybox();
 
 	//tweakbar
 	TwDraw();
@@ -932,6 +1090,7 @@ int main(int argc, char const *argv[])
 	delete shaderAllLightOrenayer;
 	delete shaderAllLightCookTorrence;
 	delete shaderSpecMap;
+	delete shaderSkybox;
 	delete Camara;
 	delete SpotLight;
 	delete directionalLight;
