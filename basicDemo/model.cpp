@@ -11,7 +11,7 @@ model::model()
 	roughness = 0.1f;
 	indexMaterial = 1.309;
 	indexAmbient = 1.309;
-	intensityParalax = 1.309;
+	intensityParalax = 0.05;
 	percentAmbient = 1.309;
 	position = glm::vec3(0.0f);
 	shaderType = 'b';
@@ -27,7 +27,7 @@ model::model(glm::vec3 pos)
 	roughness = 0.1f;
 	indexMaterial = 1.309;
 	indexAmbient = 1.309;
-	intensityParalax = 1.309;
+	intensityParalax = 0.05;
 	percentAmbient = 1.309;
 	position = pos;
 	shaderType = 'b';

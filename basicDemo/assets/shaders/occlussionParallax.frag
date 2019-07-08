@@ -6,11 +6,15 @@ in vec2 texCoord;
 in vec3 Tangent;
 in vec3 Bitangent;
 in mat3 TBN;
+in vec3 TangentLightPos;
+in vec3 TangentViewPos;
+in vec3 TangentFragPos;
 
 //Texture
 uniform sampler2D text;
 // uniform sampler2D specMap;
 uniform sampler2D normalMap;
+uniform sampler2D dispMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -53,7 +57,7 @@ uniform vec3 kd;
 uniform vec3 ks;
 uniform float n;
 uniform bool albedo;
-
+uniform float intensityParalax;
 // Fragment Color
 out vec4 color;
 
@@ -133,17 +137,94 @@ vec3 intensitySpotLight(spotLight SpotLight, vec3 normal, vec3 ViewDir, vec3 dif
     return result;
 }
 
+
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+    
+    float height =  texture(dispMap, texCoords).r;    
+    vec2 p = viewDir.xy / viewDir.z * (height * intensityParalax);
+    return texCoords - p;
+}
+
+vec2 StepParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+    // number of depth layers
+    const float numLayers = 10;
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy * intensityParalax; 
+    vec2 deltaTexCoords = P / numLayers;
+     // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = texture(dispMap, currentTexCoords).r;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(dispMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+
+    return currentTexCoords;
+} 
+
+
+vec2 OcclussionParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+    // number of depth layers
+    const float numLayers = 10;
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy * intensityParalax; 
+    vec2 deltaTexCoords = P / numLayers;
+     // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = texture(dispMap, currentTexCoords).r;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(dispMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = texture(dispMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+    
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    return finalTexCoords;  
+} 
+
 void main()
 {
     //Datos de vital importancia para todos
     vec3 normal = normalize(Normal);
+    vec3 ViewDir = normalize(TangentViewPos - TangentFragPos.xyz);
+    vec2 TexCoord = OcclussionParallaxMapping(texCoord,  ViewDir);
     // obtain normal from normal map in range [0,1]
-    normal = texture(normalMap, texCoord).rgb;
+    normal = texture(normalMap, TexCoord).rgb;
     // transform normal vector to range [-1,1]
     normal = normalize(normal * 2.0 - 1.0);
     normal = normalize(TBN * normal);
-    vec3 ViewDir = normalize(viewPos - fragPos.xyz);
-    
+
     vec3 result;
     if(!albedo)
     {
@@ -153,17 +234,17 @@ void main()
         result += intensiyLightDir(normal,ViewDir, kd);
     
     }else {
-        result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, texCoord).rgb);
-        result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, texCoord).rgb);
-        result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, texCoord).rgb);
-        result += intensiyLightDir(normal,ViewDir, texture2D(text, texCoord).rgb);
+        result = intensitySpotLight(SpotLight, normal, ViewDir, texture2D(text, TexCoord).rgb);
+        result += intensityPointLight(pointLights[0], normal, ViewDir, texture2D(text, TexCoord).rgb);
+        result += intensityPointLight(pointLights[1], normal, ViewDir, texture2D(text, TexCoord).rgb);
+        result += intensiyLightDir(normal,ViewDir, texture2D(text, TexCoord).rgb);
         
-        if(texture2D(text, texCoord).a < 0.1)
+        if(texture2D(text, TexCoord).a < 0.1)
             discard;
     }
     color = vec4(result, 1.0f);
     
     //Texture
-    // color = color /* texture2D(text, texCoord).rgb*/;
+    // color = color /* texture2D(text, TexCoord).rgb*/;
     // color = vec4(Normal, 0.0f);
 }

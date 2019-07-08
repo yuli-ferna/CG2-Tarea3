@@ -36,7 +36,8 @@ GLFWwindow *window;
 // Shader object
 Shader *shader, *shaderDirLight, *shaderPointLight, 
 *shaderAllLight, *shaderAllLightOrenayer, *shaderEnviroment, *shaderAllLightCookTorrence,
-*shaderSpecMap, *shaderSkybox, *shaderRefraction, *shadernormalMapping;
+*shaderSpecMap, *shaderSkybox, *shaderRefraction, *shadernormalMapping,
+*shaderocclussionParallax, *shadersemiTransparent;
 
 //Textures
 unsigned int textureID;
@@ -750,6 +751,8 @@ bool init()
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
 	shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 	shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
+	shaderocclussionParallax = new Shader("assets/shaders/occlussionParallax.vert", "assets/shaders/occlussionParallax.frag");
+	shadersemiTransparent = new Shader("assets/shaders/semiTransparent.vert", "assets/shaders/semiTransparent.frag");
 	shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
@@ -797,6 +800,8 @@ void processKeyboardInput(GLFWwindow *window)
 		delete shaderAllLightOrenayer;
 		delete shaderRefraction;
 		delete shaderAllLightCookTorrence;
+		delete shaderocclussionParallax;
+		delete shadersemiTransparent;
 		delete shaderSpecMap;
 		delete shaderSkybox;
 		delete shadernormalMapping;
@@ -811,6 +816,8 @@ void processKeyboardInput(GLFWwindow *window)
 		shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 		shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
+		shaderocclussionParallax = new Shader("assets/shaders/occlussionParallax.vert", "assets/shaders/occlussionParallax.frag");
+		shadersemiTransparent = new Shader("assets/shaders/semiTransparent.vert", "assets/shaders/semiTransparent.frag");
 		shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
@@ -943,8 +950,9 @@ void renderObj(Shader* shaderActual, int i)
 		shaderActual->setVec3("ks", modelsObj[i]->getKSpecular());
 		shaderActual->setFloat("n", modelsObj[i]->getShinniness());
 		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
-		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
-		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
+		shaderActual->setFloat("indexAmbiental", modelsObj[i]->getindexAmbient());
+		shaderActual->setFloat("intensityParalax", modelsObj[i]->getintensityParalax());
+		shaderActual->setFloat("percentAmbient", modelsObj[i]->getpercentAmbient());
 		shaderActual->setFloat("roughness", modelsObj[i]->getRoughness());
 		shaderActual->setBool("albedo", modelsObj[i]->getAlbedo());
 
@@ -1107,7 +1115,7 @@ void render()
 				break;
 			//Occlussion parallax mapping
 			case 'p':
-				renderObj(shaderAllLight, i);
+				renderObj(shaderocclussionParallax, i);
 				break;
 			//Refraction
 			case 'r':
@@ -1119,7 +1127,7 @@ void render()
 				break;
 			//Objetos semitransparents
 			case 't':
-				renderObj(shaderAllLight, i);
+				renderObj(shadersemiTransparent, i);
 				break;
 			default:
 				break;
@@ -1189,6 +1197,9 @@ int main(int argc, char const *argv[])
 	glDeleteTextures(1, &textureID);
 	glDeleteTextures(1, &textureID1);
 	glDeleteTextures(1, &normalMap);
+	glDeleteTextures(1, &specularMap);
+	glDeleteTextures(1, &dispMap);
+	glDeleteTextures(1, &cubemapTexture);
 	
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
@@ -1213,6 +1224,8 @@ int main(int argc, char const *argv[])
 	delete shaderRefraction;
 	delete shaderAllLightCookTorrence;
 	delete shadernormalMapping;
+	delete shaderocclussionParallax;
+	delete shadersemiTransparent;
 	delete shaderSpecMap;
 	delete shaderSkybox;
 	delete Camara;
