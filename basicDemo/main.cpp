@@ -1,4 +1,5 @@
 #define N_POINTLIGHTS 2
+#define NVBOS 5
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -35,11 +36,11 @@ GLFWwindow *window;
 // Shader object
 Shader *shader, *shaderDirLight, *shaderPointLight, 
 *shaderAllLight, *shaderAllLightOrenayer, *shaderEnviroment, *shaderAllLightCookTorrence,
-*shaderSpecMap, *shaderSkybox, *shaderRefraction;
+*shaderSpecMap, *shaderSkybox, *shaderRefraction, *shadernormalMapping;
 
 //Textures
 unsigned int textureID;
-unsigned int textureID1,specularMap;
+unsigned int textureID1, specularMap, normalMap, dispMap;
 unsigned int cubemapTexture;
 std::vector<unsigned int> textures;
 
@@ -307,19 +308,22 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position)
 {
 	std::vector< glm::vec3 > Vert;
 	std::vector< glm::vec3 > Normal;
+	std::vector< glm::vec3 > Tangent;
+	std::vector< glm::vec3 > Bitangent;
 	std::vector< glm::vec2 > UV;
 	//Positions
 
 	model *obj = new model(position[0]);
 	obj->loadObj(path, Vert, Normal, UV);
-	//obj = obj->loadObj(".\\assets\\models\\sphere1.obj", pos[0]);
+	obj->getTangentBitanget(Vert, UV, Normal, Tangent, Bitangent);
+	
 	//int nMod = 3;
 	//Load 3 models
-	unsigned int VAOForm[1],  VBOForm[3], numVertex = Vert.size();
+	unsigned int VAOForm[1],  VBOForm[NVBOS], numVertex = Vert.size();
 	// Creates on GPU the vertex array
 	glGenVertexArrays(1, &VAOForm[0]);
 	// Creates on GPU the vertex buffer obj
-	glGenBuffers(3, VBOForm);
+	glGenBuffers(NVBOS, VBOForm);
 	// Binds the vertex array to set all the its properties
 	glBindVertexArray(VAOForm[0]);
 
@@ -341,16 +345,37 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position)
 	// Sets the vertex attributes
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	//glBindVertexArray(0);
-	//color VBOForm
+	
+	//normal VBOForm
 	// Sets the buffer geometry data
 	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[2]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Normal.size(), &Normal[0], GL_STATIC_DRAW);
 
-	//color object.VAO
+	//normal object.VAO
 	// Sets the vertex attributes
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	//Tangent VBOForm
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[3]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Tangent.size(), &Tangent[0], GL_STATIC_DRAW);
+
+	//Tangent object.VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	//Bitangent VBOForm
+	// Sets the buffer geometry data
+	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[4]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Bitangent.size(), &Bitangent[0], GL_STATIC_DRAW);
+
+	//Bitangent object.VAO
+	// Sets the vertex attributes
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
 	glBindVertexArray(0);
 	
 	
@@ -363,6 +388,8 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position)
 		obj1->VBO[0] = VBOForm[0];
 		obj1->VBO[1] = VBOForm[1];
 		obj1->VBO[2] = VBOForm[2];
+		obj1->VBO[3] = VBOForm[3];
+		obj1->VBO[4] = VBOForm[4];
 		obj1->VAO[0] = VAOForm[0];
 		obj1->numVertex = numVertex;
 		obj1->setPosition(position[i]);
@@ -464,7 +491,7 @@ void buildGeometry()
 		// Creates on GPU the vertex array
 		glGenVertexArrays(1, &object->VAO[0]);
 		// Creates on GPU the vertex buffer object
-		glGenBuffers(3, object->VBO);
+		glGenBuffers(NVBOS, object->VBO);
 		// Binds the vertex array to set all the its properties
 		glBindVertexArray(object->VAO[0]);
 
@@ -496,6 +523,27 @@ void buildGeometry()
 		// Sets the vertex attributes
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		//Tangent object->VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[3]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->tangent.size(), &object->tangent[0], GL_STATIC_DRAW);
+
+		//Tangent object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+		//Bitangent object->VBO
+		// Sets the buffer geometry data
+		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[4]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->bitangent.size(), &object->bitangent[0], GL_STATIC_DRAW);
+
+		//Bitangent object.VAO
+		// Sets the vertex attributes
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
 		glBindVertexArray(0);
 	
 		//object->setPosition(pos[i]);
@@ -610,9 +658,9 @@ unsigned int loadTexture(const char *path)
 void initLights() 
 {
 	pointLight *light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
-	light1->setDiffuseColor(glm::vec3(0.75f, 0.0f, 0.0f));
+	light1->setDiffuseColor(glm::vec3(0.2f));
 	pointLight *light2 = new pointLight(glm::vec3(2.0f, 0.0f, -2.0f));
-	light2->setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.0f));
+	light2->setDiffuseColor(glm::vec3(0.2f));
 
 	PointLight.push_back(light1);
 	PointLight.push_back(light2);
@@ -658,6 +706,9 @@ void initTexture() {
 	textureID = loadTexture("assets/textures/grass.png");
 	textures.push_back(textureID);
 	textureID1 = loadTexture("assets/textures/container2.png");
+	normalMap = loadTexture("assets/textures/bricks2_normal.jpg");
+	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
+
 	textures.push_back(textureID);
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
@@ -699,6 +750,7 @@ bool init()
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
 	shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 	shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
+	shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
@@ -747,6 +799,7 @@ void processKeyboardInput(GLFWwindow *window)
 		delete shaderAllLightCookTorrence;
 		delete shaderSpecMap;
 		delete shaderSkybox;
+		delete shadernormalMapping;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");*/
@@ -758,6 +811,7 @@ void processKeyboardInput(GLFWwindow *window)
 		shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 		shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
+		shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
     }
@@ -903,6 +957,15 @@ void renderObj(Shader* shaderActual, int i)
 		glActiveTexture(GL_TEXTURE0 + specularMap - 1);
 		glBindTexture(GL_TEXTURE_2D, specularMap);
 		shaderActual->setInt("specMap", specularMap - 1);
+		
+		glActiveTexture(GL_TEXTURE0 + normalMap - 1);
+		glBindTexture(GL_TEXTURE_2D, normalMap);
+		shaderActual->setInt("normalMap", normalMap - 1);
+		
+		glActiveTexture(GL_TEXTURE0 + dispMap - 1);
+		glBindTexture(GL_TEXTURE_2D, dispMap);
+		shaderActual->setInt("dispMap", dispMap - 1);
+
 		// Binds the vertex array to be drawn
 		glBindVertexArray(modelsObj[i]->VAO[0]);
     
@@ -951,8 +1014,7 @@ void updateUserInterface()
 
 	modelsObj[nMod]->setAlbedo(Interface->albedo);
 	modelsObj[nMod]->setShader(Interface->getShader());
-	//std::cout << Interface->shinniness << ' ' << Interface->roughness << std::endl;
-
+	
 	//Light dir
 	directionalLight->setLightDir(Interface->direction);
 	directionalLight->setAmbientColor(Interface->ambientColor);
@@ -962,7 +1024,7 @@ void updateUserInterface()
 
 	//Point lights
 	int nLight = Interface->nPointLight;
-	//std::cout << Interface->direction[0] << ' ' << Interface->direction[1] << ' ' << Interface->direction[2] << std::endl;
+	
 	if (lightAnt != nLight)
 	{
 		Interface->onLightPoint = PointLight[nLight]->getONOFF();
@@ -990,8 +1052,7 @@ void updateUserInterface()
 	SpotLight->setONOFF(Interface->onLightSpot);
 	SpotLight->setKAttenuation(Interface->lightAttSpot);
 
-	//std::cout << Interface->onLightDir << std::endl};
-}
+	}
 
 void drawSkybox()
 {
@@ -1042,7 +1103,7 @@ void render()
 				break;
 			//Normal mapping
 			case 'n':
-				renderObj(shaderAllLight, i);
+				renderObj(shadernormalMapping, i);
 				break;
 			//Occlussion parallax mapping
 			case 'p':
@@ -1127,6 +1188,8 @@ int main(int argc, char const *argv[])
     // Deletes the texture from the gpu
 	glDeleteTextures(1, &textureID);
 	glDeleteTextures(1, &textureID1);
+	glDeleteTextures(1, &normalMap);
+	
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
@@ -1136,7 +1199,8 @@ int main(int argc, char const *argv[])
 		glDeleteBuffers(1, &modelsObj[i]->VBO[0]);
 		glDeleteBuffers(1, &modelsObj[i]->VBO[1]);
 		glDeleteBuffers(1, &modelsObj[i]->VBO[2]);
-
+		glDeleteBuffers(1, &modelsObj[i]->VBO[3]);
+		glDeleteBuffers(1, &modelsObj[i]->VBO[4]);
 	}
 
 	// Destroy the shader
@@ -1148,6 +1212,7 @@ int main(int argc, char const *argv[])
 	delete shaderAllLightOrenayer;
 	delete shaderRefraction;
 	delete shaderAllLightCookTorrence;
+	delete shadernormalMapping;
 	delete shaderSpecMap;
 	delete shaderSkybox;
 	delete Camara;

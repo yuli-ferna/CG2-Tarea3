@@ -4,7 +4,7 @@ spotLight::spotLight(glm::vec3 lightP)
 {
 	lightPos = lightP;
 	setKAttenuation(glm::vec3(1.0f, 0.1f, 0.01f));
-	setDiffuseColor(glm::vec3(0.0f, 0.75f, 0.75f));
+	setDiffuseColor(glm::vec3(0.2f));
 	ON = true;
 	cuttof = 0.9f;
 	outerCuttof = 0.8f;

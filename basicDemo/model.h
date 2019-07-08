@@ -14,11 +14,11 @@ class model
 
 public:
 	//string name;
-	std::vector<glm::vec3> vertex, normal, color;
+	std::vector<glm::vec3> vertex, normal, color, tangent, bitangent;
 	std::vector<glm::vec2> uv;
 	int numVertex;
 	// Index (GPU) of the geometry buffer
-	unsigned int VBO[3];
+	unsigned int VBO[5];
 	// Index (GPU) vertex array object
 	unsigned int VAO[1];
 	//Propiedades de color del modelo
@@ -49,6 +49,18 @@ public:
 	model* loadObj(std::string path, glm::vec3 position);
 	bool loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<glm::vec3>& norm, std::vector<glm::vec2>& uvText);
 	void loadMTL(std::string path);
+
+	//tangents and bitangents
+	void getTangentBitanget(
+		// inputs
+		std::vector<glm::vec3>& vertices,
+		std::vector<glm::vec2>& uvs,
+		std::vector<glm::vec3>& normals,
+		// outputs
+		std::vector<glm::vec3>& tangents,
+		std::vector<glm::vec3>& bitangents
+	);
+
 	Texture getTexture();
 	void setTexture(unsigned int diffID);
 	void setTexture(unsigned int diffID, unsigned int specID);

@@ -152,14 +152,30 @@
   <ItemGroup>
     <None Include="assets\shaders\allLight.frag" />
     <None Include="assets\shaders\allLight.vert" />
+    <None Include="assets\shaders\allLightCookTorrence.frag" />
+    <None Include="assets\shaders\allLightCookTorrence.vert" />
+    <None Include="assets\shaders\allLightOrenayer.frag" />
+    <None Include="assets\shaders\allLightOrenayer.vert" />
     <None Include="assets\shaders\basic.frag" />
     <None Include="assets\shaders\basic.vert" />
+    <None Include="assets\shaders\enviromentMapp.frag" />
+    <None Include="assets\shaders\enviromentMapp.vert" />
     <None Include="assets\shaders\lightDirectional.frag" />
     <None Include="assets\shaders\lightDirectional.vert" />
     <None Include="assets\shaders\lightPoint.frag" />
     <None Include="assets\shaders\lightPoint.vert" />
     <None Include="assets\shaders\lightSpot.frag" />
     <None Include="assets\shaders\lightSpot.vert" />
+    <None Include="assets\shaders\normalMapping.frag" />
+    <None Include="assets\shaders\normalMapping.vert" />
+    <None Include="assets\shaders\occlussionParallax.frag" />
+    <None Include="assets\shaders\occlussionParallax.vert" />
+    <None Include="assets\shaders\refraction.frag" />
+    <None Include="assets\shaders\refraction.vert" />
+    <None Include="assets\shaders\skybox.frag" />
+    <None Include="assets\shaders\skybox.vert" />
+    <None Include="assets\shaders\specMap.frag" />
+    <None Include="assets\shaders\specMap.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

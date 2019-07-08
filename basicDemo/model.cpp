@@ -121,16 +121,14 @@ bool model::loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<
 
 	}
 
-	//model* a = new model();
 	//Creando el arreglo final
-	/*std::vector< glm::vec3 > Vert;
-	std::vector< glm::vec3 > Normal;
-	std::vector< glm::vec2 > UV;*/
+
 	for (int i = 0; i < vertInd.size(); i++)
 	{
 		vert.push_back(glm::vec3(allVert[vertInd[i]]));
 		uvText.push_back(allUV[uvInd[i]]);
 		norm.push_back(glm::vec3(allNormal[normInd[i]]));
+
 	}
 	numVertex = vert.size();
 
@@ -228,7 +226,7 @@ model* model::loadObj(std::string path, glm::vec3 position)
 		a->normal.push_back(glm::vec3(allNormal[normInd[i]]));
 	}
 	a->numVertex = a->vertex.size();
-
+	getTangentBitanget(a->vertex, a->uv, a->normal, a->tangent, a->bitangent);
 	return a;
 
 }
@@ -284,6 +282,42 @@ void model::loadMTL(std::string path)
 		else if (first == "map_Kd") {
 
 		}
+	}
+}
+
+void model::getTangentBitanget(std::vector<glm::vec3>& vertices, std::vector<glm::vec2>& uvs, std::vector<glm::vec3>& normals, std::vector<glm::vec3>& tangents, std::vector<glm::vec3>& bitangents)
+{
+	for (size_t ii = 0; ii < vertices.size(); ii += 3)
+	{
+		glm::vec3 v0 = vertices[ii + 0];
+		glm::vec3 v1 = vertices[ii + 1];
+		glm::vec3 v2 = vertices[ii + 2];
+
+		// Shortcuts for UVs
+		glm::vec2 uv0 = uvs[ii + 0];
+		glm::vec2 uv1 = uvs[ii + 1];
+		glm::vec2 uv2 = uvs[ii + 2];
+
+		// Edges of the triangle : position delta
+		glm::vec3 deltaPos1 = v1 - v0;
+		glm::vec3 deltaPos2 = v2 - v0;
+
+		// UV delta
+		glm::vec2 deltaUV1 = uv1 - uv0;
+		glm::vec2 deltaUV2 = uv2 - uv0;
+
+		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+		glm::vec3 tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
+		glm::vec3 bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
+
+		// Los tres vertices procesados tenrán la misma tangente y bitangente
+		tangents.push_back(tangent);
+		tangents.push_back(tangent);
+		tangents.push_back(tangent);
+
+		bitangents.push_back(bitangent);
+		bitangents.push_back(bitangent);
+		bitangents.push_back(bitangent);
 	}
 }
 
