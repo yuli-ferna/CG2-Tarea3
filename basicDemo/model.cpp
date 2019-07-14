@@ -120,6 +120,7 @@ bool model::loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<
 		}
 
 	}
+	std::cout << "Sale de la funcion" << std::endl;
 
 	//Creando el arreglo final
 
@@ -131,6 +132,7 @@ bool model::loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<
 
 	}
 	numVertex = vert.size();
+	std::cout << "Sale de la funcion" << std::endl;
 
 	return true;
 
@@ -216,6 +218,7 @@ model* model::loadObj(std::string path, glm::vec3 position)
 		}
 
 	}
+	std::cout << "Sale de leer archivo " << std::endl;
 
 	model *a = new model(position);
 	//Creando el arreglo final
@@ -226,7 +229,9 @@ model* model::loadObj(std::string path, glm::vec3 position)
 		a->normal.push_back(glm::vec3(allNormal[normInd[i]]));
 	}
 	a->numVertex = a->vertex.size();
+	std::cout << "Sale de llenar características" << path << std::endl;
 	getTangentBitanget(a->vertex, a->uv, a->normal, a->tangent, a->bitangent);
+	std::cout << "Sale de calculas tangente" << path << std::endl;
 	return a;
 
 }

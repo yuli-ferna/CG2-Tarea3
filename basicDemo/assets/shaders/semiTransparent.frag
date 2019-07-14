@@ -6,7 +6,9 @@ in vec3 fragPos;
 
 //Texture
 uniform vec3 viewPos;
-uniform samplerCube skybox;
+uniform sampler2D normalMap;
+uniform sampler2D dispMap;
+uniform sampler2D blend;
 
 // Fragment Color
 out vec4 color;
@@ -18,5 +20,5 @@ void main()
     // vec3 R = refract(I, normalize(Normal), ratio);
     vec3 R = reflect(I, normalize(Normal));
 
-    color = vec4(texture(skybox, R).rgb, 1.0);
+    color = texture(blend, texCoord);
 }

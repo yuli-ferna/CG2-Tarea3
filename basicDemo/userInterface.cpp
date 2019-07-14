@@ -18,7 +18,8 @@ userInterface::userInterface()
 	TwDefine("Tarea color='143 66 244'");
 
 	direction = glm::vec3(3.0f, -4.0f, -2.0f);
-
+	indexMaterial = 1.309;
+	indexAmbient = 1.309;
 	TwEnumVal shaders[] = { {BLINN, "Blinn Phonn"}, {COOK, "Cook Torrance"}, {OREN, "Oren Nayar"},
  {NORM, "Normal Mapping"}, {PARAL, "Occlussion parallax mapping"}, {REFR, "Refraction"}, {REFL, "Reflection"}, 
 	{TRANS, "Semitransparent"} };

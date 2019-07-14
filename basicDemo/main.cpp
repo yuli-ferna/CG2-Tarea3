@@ -23,6 +23,7 @@
 
 #include "Shader.h"
 #include <vector>
+#include <map>
 
 #define px(x) x  
 // Window current width
@@ -41,7 +42,7 @@ Shader *shader, *shaderDirLight, *shaderPointLight,
 
 //Textures
 unsigned int textureID;
-unsigned int textureID1, specularMap, normalMap, dispMap;
+unsigned int textureID1, specularMap, normalMap, dispMap, blend;
 unsigned int cubemapTexture;
 std::vector<unsigned int> textures;
 
@@ -70,7 +71,7 @@ userInterface *Interface;
 
 //Models
 model *object;
-std::vector< model* > modelsObj, lightsObj;
+std::vector< model* > modelsObj, lightsObj, transparentObj;
 int lightAnt, modelAnt;
 /* *
  * Handles the window resize
@@ -287,6 +288,9 @@ void initGL()
     // Enables the z-buffer test
     glEnable(GL_DEPTH_TEST);
 	glEnable(GL_FRAMEBUFFER_SRGB);
+	//Blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // Sets the ViewPort
     glViewport(0, 0, windowWidth, windowHeight);
     // Sets the clear color
@@ -305,7 +309,7 @@ void initMVP()
 
 }
 
-void buildGeom(std::string path, std::vector< glm::vec3 > position)
+void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector< model* >&arrayObj)
 {
 	std::vector< glm::vec3 > Vert;
 	std::vector< glm::vec3 > Normal;
@@ -393,8 +397,9 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position)
 		obj1->VBO[4] = VBOForm[4];
 		obj1->VAO[0] = VAOForm[0];
 		obj1->numVertex = numVertex;
+		std::cout << position[i].x << ' ' << position[i].y << position[i].z << std::endl;
 		obj1->setPosition(position[i]);
-		modelsObj.push_back(obj1);
+		arrayObj.push_back(obj1);
 	}
 	
 	position.clear();
@@ -467,22 +472,34 @@ void buildGeometry()
 	std::vector< std::string > paths;
 	std::vector < glm::vec3 > pos;
 	
-	
-	
 	//Positions
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(4.0f, 0.0f, 0.0f));
 	pos.push_back(glm::vec3(-4.0f, 0.0f, 0.0f));
 	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
-	buildGeom(".\\assets\\models\\cube1.obj", pos);
-
+	buildGeom(".\\assets\\models\\cube1.obj", pos, modelsObj);
+	pos.clear();
+	pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	pos.push_back(glm::vec3(0.0f, 0.0f, 2.0f));
+	pos.push_back(glm::vec3(0.0f, 0.0f, 4.0f));
+	buildGeom(".\\assets\\models\\window.obj", pos, transparentObj);
+	std::cout << transparentObj.size() << "\n";
 	//Paths
-	paths.push_back(".\\assets\\models\\planeS.obj");
+	paths.push_back(".\\assets\\models\\plane.obj");
+	//paths.push_back(".\\assets\\models\\cube1.obj");
 	paths.push_back(".\\assets\\models\\cube2.obj");
+	//paths.push_back(".\\assets\\models\\cube3.obj");
+	//paths.push_back(".\\assets\\models\\pokeball.obj");
+	//paths.push_back(".\\assets\\models\\catS.obj");
+	//paths.push_back(".\\assets\\models\\windowERR.obj");
 
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(4.0f));
+	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(0.0f));
+	pos.push_back(glm::vec3(0.0f));
 
 	//Load models
 	for (size_t i = 0; i < paths.size(); i++)
@@ -709,6 +726,7 @@ void initTexture() {
 	textureID1 = loadTexture("assets/textures/container2.png");
 	normalMap = loadTexture("assets/textures/bricks2_normal.jpg");
 	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
+	blend = loadTexture("assets/textures/blending_transparent_window.png");
 
 	textures.push_back(textureID);
 	textures.push_back(textureID1);
@@ -844,11 +862,11 @@ void processKeyboardInput(GLFWwindow *window)
 /*
 * Update MVP
 */
-void updateMVP(int i)
+void updateMVP(int i, glm::vec3 pos)
 {
 	Model = glm::mat4(1.0f);
 
-	Model = glm::translate(glm::mat4(1.0f), modelsObj[i]->getPosition());
+	Model = glm::translate(glm::mat4(1.0f), pos);
 	
 	View = Camara->getView();
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
@@ -866,7 +884,7 @@ void drawLights()
 	//Draw models of the scene
 	for (size_t i = 0; i < lightsObj.size(); i++)
 	{
-		updateMVP(i);
+		updateMVP(i, PointLight[i]->getLightPos());
 		Model = glm::translate(glm::mat4(1.0f), PointLight[i]->getLightPos());
 		glm::mat4 MVP = (Proj * View * Model);
 		shader->setMat4("MVP", MVP);
@@ -893,7 +911,7 @@ void drawLights()
 	glBindVertexArray(0);
 }
 
-void renderObj(Shader* shaderActual, int i)
+void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 {
 	glm::mat4 MVP;
 	// Use the shader
@@ -939,22 +957,22 @@ void renderObj(Shader* shaderActual, int i)
 	/*for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 	*/	//MVP trnasformations
-		updateMVP(i);
+		updateMVP(i, arrayObj[i]->getPosition());
 		shaderActual->setMat4("Model", Model);
 		shaderActual->setMat4("View", View);
 		shaderActual->setMat4("Proj", Proj);
 		
 		//Material
-		shaderActual->setVec3("ka", modelsObj[i]->getKAmbient());
-		shaderActual->setVec3("kd", modelsObj[i]->getKDiffuse());
-		shaderActual->setVec3("ks", modelsObj[i]->getKSpecular());
-		shaderActual->setFloat("n", modelsObj[i]->getShinniness());
-		shaderActual->setFloat("indexMaterial", modelsObj[i]->getindexMaterial());
-		shaderActual->setFloat("indexAmbiental", modelsObj[i]->getindexAmbient());
-		shaderActual->setFloat("intensityParalax", modelsObj[i]->getintensityParalax());
-		shaderActual->setFloat("percentAmbient", modelsObj[i]->getpercentAmbient());
-		shaderActual->setFloat("roughness", modelsObj[i]->getRoughness());
-		shaderActual->setBool("albedo", modelsObj[i]->getAlbedo());
+		shaderActual->setVec3("ka", arrayObj[i]->getKAmbient());
+		shaderActual->setVec3("kd", arrayObj[i]->getKDiffuse());
+		shaderActual->setVec3("ks", arrayObj[i]->getKSpecular());
+		shaderActual->setFloat("n", arrayObj[i]->getShinniness());
+		shaderActual->setFloat("indexMaterial", arrayObj[i]->getindexMaterial());
+		shaderActual->setFloat("indexAmbiental", arrayObj[i]->getindexAmbient());
+		shaderActual->setFloat("intensityParalax", arrayObj[i]->getintensityParalax());
+		shaderActual->setFloat("percentAmbient", arrayObj[i]->getpercentAmbient());
+		shaderActual->setFloat("roughness", arrayObj[i]->getRoughness());
+		shaderActual->setBool("albedo", arrayObj[i]->getAlbedo());
 
 		//Texture
 		
@@ -975,10 +993,10 @@ void renderObj(Shader* shaderActual, int i)
 		shaderActual->setInt("dispMap", dispMap - 1);
 
 		// Binds the vertex array to be drawn
-		glBindVertexArray(modelsObj[i]->VAO[0]);
+		glBindVertexArray(arrayObj[i]->VAO[0]);
     
 		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
+		glDrawArrays(GL_TRIANGLES, 0, arrayObj[i]->numVertex);
 		
 	/*}
 */
@@ -1099,41 +1117,66 @@ void render()
 		{
 			//Blinn
 			case 'b':
-			renderObj(shaderAllLight, i);
+			renderObj(shaderAllLight, i, modelsObj);
 				break;
 			//Cook torrance
 			case 'c':
-			renderObj(shaderAllLightCookTorrence, i);
+			renderObj(shaderAllLightCookTorrence, i, modelsObj);
 				break;
 			//Oren nayar
 			case 'o':
-			renderObj(shaderAllLightOrenayer, i);
+			renderObj(shaderAllLightOrenayer, i, modelsObj);
 				break;
 			//Normal mapping
 			case 'n':
-				renderObj(shadernormalMapping, i);
+				renderObj(shadernormalMapping, i, modelsObj);
 				break;
 			//Occlussion parallax mapping
 			case 'p':
-				renderObj(shaderocclussionParallax, i);
+				renderObj(shaderocclussionParallax, i, modelsObj);
 				break;
 			//Refraction
 			case 'r':
-				renderObj(shaderRefraction, i);
+				renderObj(shaderRefraction, i, modelsObj);
 				break;
 			//Reflection
 			case 'l':
-				renderObj(shaderEnviroment, i);
+				renderObj(shaderEnviroment, i, modelsObj);
 				break;
 			//Objetos semitransparents
 			case 't':
-				renderObj(shadersemiTransparent, i);
+
+				renderObj(shadersemiTransparent, i, modelsObj);
+				glActiveTexture(GL_TEXTURE0 + blend - 1);
+				glBindTexture(GL_TEXTURE_2D, blend);
+				shadersemiTransparent->setInt("blend", blend - 1);
 				break;
 			default:
 				break;
 		}
 	}
+	std::map<float, int> sorted;
+	for (unsigned int i = 0; i < transparentObj.size(); i++)
+	{
+		float distance = glm::length(Camara->getPosition() - transparentObj[i]->getPosition());
+		sorted[distance] = i;
+	}
+	//Draw semitransparent objects
+	/*for (size_t i = 0; i < transparentObj.size(); i++)
+	{
+		renderObj(shadersemiTransparent, i, transparentObj);
+		glActiveTexture(GL_TEXTURE0 + blend - 1);
+		glBindTexture(GL_TEXTURE_2D, blend);
+		shadersemiTransparent->setInt("blend", blend - 1);
+	}*/
+	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+	{
+		renderObj(shadersemiTransparent, it->second, transparentObj);
+		glActiveTexture(GL_TEXTURE0 + blend - 1);
+		glBindTexture(GL_TEXTURE_2D, blend);
+		shadersemiTransparent->setInt("blend", blend - 1);
 
+	}
 	//Lights
 	drawLights();
 	
@@ -1199,6 +1242,7 @@ int main(int argc, char const *argv[])
 	glDeleteTextures(1, &normalMap);
 	glDeleteTextures(1, &specularMap);
 	glDeleteTextures(1, &dispMap);
+	glDeleteTextures(1, &blend);
 	glDeleteTextures(1, &cubemapTexture);
 	
 
