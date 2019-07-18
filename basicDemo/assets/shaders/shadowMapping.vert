@@ -11,30 +11,22 @@ layout (location = 3) in vec3 vertexTangent;
 layout (location = 4) in vec3 vertexBitangent;  
 
 //Uniforms MVP matrix
-// uniform mat4 MVP;
 uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Proj;
+uniform mat4 lightSpaceMatrix;
 //Texture
 out vec2 texCoord;
 //Model data
 out vec3 Normal;
-out vec3 Tangent;
-out vec3 Bitangent;
 out vec3 fragPos;
-out mat3 TBN;
+out vec4 FragPosLightSpace;
 
 void main()
 {
     fragPos = vec3(Model * vec4(vertexPosition, 1.0f));
-    
-    Tangent = (mat3(transpose(inverse(Model))) * vertexTangent);
-    Bitangent = (mat3(transpose(inverse(Model))) * vertexBitangent);
+    FragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
     Normal = (mat3(transpose(inverse(Model))) * vertexNormal);
-
-    //Armando la TBN
-    TBN = transpose(mat3(Tangent, Bitangent, Normal));
-
 
     texCoord = vertexTextureCoord;
     gl_Position = Proj * View * (vec4(fragPos, 1.0f));

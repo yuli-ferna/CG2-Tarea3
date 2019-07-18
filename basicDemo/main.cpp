@@ -38,7 +38,8 @@ GLFWwindow* window;
 Shader* shader, * shaderDirLight, * shaderPointLight,
 * shaderAllLight, * shaderAllLightOrenayer, * shaderEnviroment, * shaderAllLightCookTorrence,
 * shaderSpecMap, * shaderSkybox, * shaderRefraction, * shadernormalMapping,
-* shaderocclussionParallax, * shadersemiTransparent, * shaderdephtMap, * shaderquadDepthMap;
+* shaderocclussionParallax, * shadersemiTransparent, * shaderdephtMap, * shaderquadDepthMap,
+* shadershadowMapping;
 
 //Textures
 unsigned int textureID;
@@ -78,12 +79,10 @@ std::map<float, int> sorted;
 
 //Framebuffer
 //Transformar al espacio de luz
-float near_plane = 1.0f, far_plane = 7.5f;
-glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-glm::mat4 lightView = glm::lookAt(
-	glm::vec3(-2.0f, 4.0f, -1.0f),
-	glm::vec3(0.0f, 0.0f, 0.0f),
-	glm::vec3(0.0f, 1.0f, 0.0f));
+float near_plane, far_plane;
+glm::mat4 lightProjection;
+glm::mat4 lightView;
+glm::mat4 lightSpaceMatrix;
 unsigned int depthMapFBO;
 const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 unsigned int quadVAO = 0;
@@ -497,9 +496,9 @@ void buildGeometry()
 	buildModel(".\\assets\\models\\sphere1.obj", pos, modelsObj);
 	pos.clear();
 	//Positions
-	pos.push_back(glm::vec3(0.0f, 4.0f, 0.0f));
-	pos.push_back(glm::vec3(4.0f, 4.0f, 0.0f));
-	pos.push_back(glm::vec3(-4.0f, 4.0f, 0.0f));
+	pos.push_back(glm::vec3(0.0f, 5.0f, 0.0f));
+	pos.push_back(glm::vec3(4.0f, 5.0f, 0.0f));
+	pos.push_back(glm::vec3(-4.0f, 5.0f, 0.0f));
 	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
 	buildModel(".\\assets\\models\\cube1.obj", pos, modelsObj);
 	pos.clear();
@@ -507,16 +506,15 @@ void buildGeometry()
 	pos.push_back(glm::vec3(0.0f, 0.0f, 2.0f));
 	pos.push_back(glm::vec3(0.0f, 0.0f, 4.0f));
 	buildModel(".\\assets\\models\\window.obj", pos, transparentObj);
-	std::cout << transparentObj.size() << "\n";
 	//Paths
 	/*paths.push_back(".\\assets\\models\\plane.obj");
 	paths.push_back(".\\assets\\models\\cube2.obj");*/
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
 	buildModel(".\\assets\\models\\plane.obj", pos, modelsObj);
-	pos.clear();
-	pos.push_back(glm::vec3(4.0f)); 
-	buildModel(".\\assets\\models\\cube2.obj", pos, modelsObj);
+	pos.clear();/*
+	pos.push_back(glm::vec3(6.0f)); 
+	buildModel(".\\assets\\models\\cube2.obj", pos, modelsObj);*/
 
 
 	pos.clear();
@@ -526,73 +524,6 @@ void buildGeometry()
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(0.0f));
-
-	////Load models
-	//for (size_t i = 0; i < paths.size(); i++)
-	//{
-	//	object = object->loadObj(paths[i], pos[i]);
-
-	//	// Creates on GPU the vertex array
-	//	glGenVertexArrays(1, &object->VAO[0]);
-	//	// Creates on GPU the vertex buffer object
-	//	glGenBuffers(NVBOS, object->VBO);
-	//	// Binds the vertex array to set all the its properties
-	//	glBindVertexArray(object->VAO[0]);
-
-	//	//vexter position object->VBO
-	//	// Sets the buffer geometry data
-	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
-	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
-	//	//vertex position position object->VAO
-	//	// Sets the vertex attributes
-	//	glEnableVertexAttribArray(0);
-	//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//	//uv object->VBO
-	//	// Sets the buffer geometry data
-	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
-	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
-
-	//	//uv object->VAO
-	//	// Sets the vertex attributes
-	//	glEnableVertexAttribArray(1);
-	//	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	//	//glBindVertexArray(0);
-	//	//color object->VBO
-	//	// Sets the buffer geometry data
-	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
-	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
-
-	//	//color object->VAO
-	//	// Sets the vertex attributes
-	//	glEnableVertexAttribArray(2);
-	//	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//	//Tangent object->VBO
-	//	// Sets the buffer geometry data
-	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[3]);
-	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->tangent.size(), &object->tangent[0], GL_STATIC_DRAW);
-
-	//	//Tangent object.VAO
-	//	// Sets the vertex attributes
-	//	glEnableVertexAttribArray(3);
-	//	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//	//Bitangent object->VBO
-	//	// Sets the buffer geometry data
-	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[4]);
-	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->bitangent.size(), &object->bitangent[0], GL_STATIC_DRAW);
-
-	//	//Bitangent object.VAO
-	//	// Sets the vertex attributes
-	//	glEnableVertexAttribArray(4);
-	//	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//	glBindVertexArray(0);
-
-	//	//object->setPosition(pos[i]);
-	//	modelsObj.push_back(object);
-	//}
 
 	object = object->loadObj(".\\assets\\models\\pointlight.obj", glm::vec3(0.0f));
 	//Load Lights
@@ -747,20 +678,21 @@ void initTexture() {
 
 	textureID1 = loadTexture("assets/textures/bricks2.jpg");
 	textures.push_back(textureID1);
-	textureID = loadTexture("assets/textures/grass.png");
-	textures.push_back(textureID);
+	textureID = loadTexture("assets/textures/bricks2.jpg");
+	textures.push_back(textureID1);
 	textureID1 = loadTexture("assets/textures/container2.png");
+	textureID1 = loadTexture("assets/textures/bricks2.jpg");
 	normalMap = loadTexture("assets/textures/bricks2_normal.jpg");
 	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
 	blend = loadTexture("assets/textures/blending_transparent_window.png");
 
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
+	textures.push_back(textureID1);
 	specularMap = loadTexture("assets/textures/container2_specular.png");
 	//Load skybox
 	std::vector<std::string> faces
@@ -789,8 +721,11 @@ void initFramebuffer() {
 		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	//Con la textura de profundidad generada podemos adjuntarla como b�fer de profundidad del framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -815,8 +750,6 @@ bool init()
 
 	// Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-	/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
-	shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");*/
 	shaderEnviroment = new Shader("assets/shaders/enviromentMapp.vert", "assets/shaders/enviromentMapp.frag");
 	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 	shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
@@ -829,8 +762,7 @@ bool init()
 	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 	shaderdephtMap = new Shader("assets/shaders/dephtMap.vert", "assets/shaders/dephtMap.frag");
 	shaderquadDepthMap = new Shader("assets/shaders/quadDepthMap.vert", "assets/shaders/quadDepthMap.frag");
-
-	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+	shadershadowMapping = new Shader("assets/shaders/shadowMapping.vert", "assets/shaders/shadowMapping.frag");
 
 	// Loads all the geometry into the GPU
 	buildGeometry();
@@ -870,8 +802,6 @@ void processKeyboardInput(GLFWwindow* window)
 	{
 		// Reloads the shader
 		delete shader;
-		/*	delete shaderDirLight;
-			delete shaderPointLight;*/
 		delete shaderEnviroment;
 		delete shaderAllLight;
 		delete shaderAllLightOrenayer;
@@ -884,11 +814,10 @@ void processKeyboardInput(GLFWwindow* window)
 		delete shaderdephtMap;
 		delete shadernormalMapping;
 		delete shaderquadDepthMap;
+		delete shadershadowMapping;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-		/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");*/
 		shaderEnviroment = new Shader("assets/shaders/enviromentMapp.vert", "assets/shaders/enviromentMapp.frag");
-		/*shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");*/
 		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 		shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 		shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
@@ -900,8 +829,7 @@ void processKeyboardInput(GLFWwindow* window)
 		shadersemiTransparent = new Shader("assets/shaders/semiTransparent.vert", "assets/shaders/semiTransparent.frag");
 		shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 		shaderquadDepthMap = new Shader("assets/shaders/quadDepthMap.vert", "assets/shaders/quadDepthMap.frag");
-
-		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
+		shadershadowMapping = new Shader("assets/shaders/shadowMapping.vert", "assets/shaders/shadowMapping.frag");
 
 	}
 
@@ -982,6 +910,8 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	shaderActual->use();
 
 	//Light directional
+	shaderActual->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
 	shaderActual->setVec3("viewPos", Camara->getPosition());
 	//glm::vec3 lightD = glm::vec3(/*Model * View * */glm::vec4(directionalLight->getLightDir(), 0));
 	shaderActual->setVec3("lightDir", directionalLight->getLightDir());
@@ -993,16 +923,16 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 
 	//Point Light
 
-	for (int i = 0; i < N_POINTLIGHTS; i++)
+	for (int ii = 0; ii < N_POINTLIGHTS; ii++)
 	{
-		std::string it = std::to_string(i);
+		std::string it = std::to_string(ii);
 		//shaderActual->setVec3("pointLights[" + it + "].position", glm::vec3(2.0f, 0.0f, -2.0f));
-		shaderActual->setVec3("pointLights[" + it + "].position", PointLight[i]->getLightPos());
-		shaderActual->setVec3("pointLights[" + it + "].ambientColor", PointLight[i]->getAmbientColor());
-		shaderActual->setVec3("pointLights[" + it + "].diffuseColor", PointLight[i]->getDiffuseColor());
-		shaderActual->setVec3("pointLights[" + it + "].specularColor", PointLight[i]->getSpecularColor());
-		shaderActual->setVec3("pointLights[" + it + "].attenuationK", PointLight[i]->getKAttenuation());
-		shaderActual->setBool("pointLights[" + it + "].on", PointLight[i]->getONOFF());
+		shaderActual->setVec3("pointLights[" + it + "].position", PointLight[ii]->getLightPos());
+		shaderActual->setVec3("pointLights[" + it + "].ambientColor", PointLight[ii]->getAmbientColor());
+		shaderActual->setVec3("pointLights[" + it + "].diffuseColor", PointLight[ii]->getDiffuseColor());
+		shaderActual->setVec3("pointLights[" + it + "].specularColor", PointLight[ii]->getSpecularColor());
+		shaderActual->setVec3("pointLights[" + it + "].attenuationK", PointLight[ii]->getKAttenuation());
+		shaderActual->setBool("pointLights[" + it + "].on", PointLight[ii]->getONOFF());
 	}
 	//////std::cout << PointLight[0]->getLightPos().x << ' ' << PointLight[0]->getLightPos().y << ' ' << PointLight[0]->getLightPos().z << std::endl;
 
@@ -1017,10 +947,7 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	shaderActual->setFloat("SpotLight.outerCuttof", SpotLight->getOuterCuttof());
 	shaderActual->setBool("SpotLight.on", SpotLight->getONOFF());
 
-	//Draw models of the scene
-	/*for (size_t i = 0; i < modelsObj.size(); i++)
-	{
-	*/	//MVP trnasformations
+	
 	updateMVP(i, arrayObj[i]->getPosition());
 	shaderActual->setMat4("Model", Model);
 	shaderActual->setMat4("View", View);
@@ -1039,6 +966,9 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	shaderActual->setBool("albedo", arrayObj[i]->getAlbedo());
 
 	//Texture
+	glActiveTexture(GL_TEXTURE0 + depthMap - 1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	shaderActual->setInt("shadowMap", depthMap - 1);
 
 	glActiveTexture(GL_TEXTURE0 + textures[i] - 1);
 	glBindTexture(GL_TEXTURE_2D, textures[i]);
@@ -1062,11 +992,7 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	// Renders the triangle gemotry
 	glDrawArrays(GL_TRIANGLES, 0, arrayObj[i]->numVertex);
 
-	/*}
-*/
 	glBindVertexArray(0);
-
-
 }
 
 void updateUserInterface()
@@ -1164,8 +1090,18 @@ void drawSkybox()
 	glDepthFunc(GL_LESS);
 }
 
+void updateLightSpaceMatrix()
+{
+	float near_plane = 1.0f, far_plane = 80.5f;
+	lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
+	glm::vec3 lightPosition = directionalLight->getLightDir() * -1.5f;
+	lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+	lightSpaceMatrix = lightProjection * lightView;
+}
+
 void renderModels()
 {
+	updateLightSpaceMatrix();
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 		char shad = modelsObj[i]->getShader();
@@ -1173,7 +1109,7 @@ void renderModels()
 		{
 			//Blinn
 		case 'b':
-			renderObj(shaderAllLight, i, modelsObj);
+			renderObj(shadershadowMapping, i, modelsObj);
 			break;
 			//Cook torrance
 		case 'c':
@@ -1217,9 +1153,10 @@ void renderModels()
 		sorted[distance] = i;
 	}
 	//Draw semitransparent objects
-	for (size_t i = 0; i < transparentObj.size(); i++)
+	
+	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
 	{
-		renderObj(shadersemiTransparent, i, transparentObj);
+		renderObj(shadersemiTransparent, it->second, transparentObj);
 		glActiveTexture(GL_TEXTURE0 + blend - 1);
 		glBindTexture(GL_TEXTURE_2D, blend);
 		shadersemiTransparent->setInt("blend", blend - 1);
@@ -1265,12 +1202,7 @@ void renderLightView()
 {
 	/*prepare framebuffer*/
 	shaderdephtMap->use();
-	glm::mat4 lightSpaceMatrix;
-	float near_plane = 1.0f, far_plane = 50.5f;
-	//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
-	lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
-	lightView = glm::lookAt(directionalLight->getLightDir(), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-	lightSpaceMatrix = lightProjection * lightView;
+	updateLightSpaceMatrix();
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -1284,16 +1216,18 @@ void renderLightView()
 		glBindVertexArray(modelsObj[i]->VAO[0]);
 		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
 		glBindVertexArray(0);
-
-
 	}
-	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+
+	for (size_t i = 0; i < transparentObj.size(); i++)
 	{
-		renderObj(shaderdephtMap, it->second, transparentObj);
+		shaderdephtMap->use();
+		updateMVP(i, transparentObj[i]->getPosition());
+		shaderdephtMap->setMat4("model", Model);
 		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
+		glBindVertexArray(transparentObj[i]->VAO[0]);
+		glDrawArrays(GL_TRIANGLES, 0, transparentObj[i]->numVertex);
+		glBindVertexArray(0);
 	}
-
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1301,12 +1235,7 @@ void renderLightView()
 	glViewport(0, 0, windowWidth, windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//pintar quad
-	shaderquadDepthMap->use();
-	shaderquadDepthMap->setInt("depthMap", 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	renderQuad();
+	
 
 }
 /**
@@ -1316,26 +1245,29 @@ void render()
 {
 	// Clears the color and depth buffers from the frame buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	/*prepare framebuffer*/
 	
 	/** Draws code goes here **/
 
+	renderLightView();
+	glCullFace(GL_FRONT);
 	renderModels();
-	
-	if(Interface->lightView)
-		renderLightView();
-	
+	glCullFace(GL_BACK);
+
+	if (Interface->lightView)
+	{
+		//pintar quad
+		shaderquadDepthMap->use();
+		shaderquadDepthMap->setInt("depthMap", 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		renderQuad();
+	}
 	//tweakbar
 	TwDraw();
 
 	//Update
 	updateUserInterface();
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// reset viewport
-	//glViewport(0, 0, windowWidth, windowHeight);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// Swap the buffer
 	glfwSwapBuffers(window);
 }
@@ -1436,6 +1368,7 @@ int main(int argc, char const* argv[])
 	delete shaderSkybox;
 	delete shaderdephtMap;
 	delete shaderquadDepthMap;
+	delete shadershadowMapping;
 	delete Camara;
 	delete SpotLight;
 	delete directionalLight;
