@@ -15,6 +15,7 @@ class camera
 	bool cameraMode;
 	float mouseSpeed = 0.05f;
 	float keyboardSpeed = 0.5f;
+	float deltaTime = 1.0f;
 
 	//Keyboard
 	glm::vec3 position;
@@ -38,9 +39,7 @@ public:
 	glm::vec3 getPosition();
 	glm::vec3 getFront();
 	void updateInputMouse(GLfloat offsetX, GLfloat offsetY);
-	void updateInputMouse(const double offsetX, const double offsetY);
 	void updateInputKeyboard(const char direction);
-	void updateInput(const float& dt,const int direction, const double& offsetX, const double& offsetY);
 	bool getCameraMode();
 	void changeCameraMode();
 	void setCameraMode(bool cameraMod);
@@ -48,6 +47,8 @@ public:
 	void setSpeedMouse(float speed);
 	float getSpeed();
 	void setSpeed(float speedK);
+	float getDeltatime();
+	void setDeltatime(float speed);
 private:
 
 };

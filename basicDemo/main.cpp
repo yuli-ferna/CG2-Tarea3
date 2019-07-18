@@ -1,4 +1,4 @@
-#define N_POINTLIGHTS 2
+﻿#define N_POINTLIGHTS 2
 #define NVBOS 5
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
@@ -31,24 +31,23 @@ unsigned int windowWidth = 800;
 // Window current height
 unsigned int windowHeight = 600;
 // Window title
-const char *windowTitle = "Yuliana Fernandez";
+const char* windowTitle = "Yuliana Fernandez";
 // Window pointer
-GLFWwindow *window;
+GLFWwindow* window;
 // Shader object
-Shader *shader, *shaderDirLight, *shaderPointLight, 
-*shaderAllLight, *shaderAllLightOrenayer, *shaderEnviroment, *shaderAllLightCookTorrence,
-*shaderSpecMap, *shaderSkybox, *shaderRefraction, *shadernormalMapping,
-*shaderocclussionParallax, *shadersemiTransparent;
+Shader* shader, * shaderDirLight, * shaderPointLight,
+* shaderAllLight, * shaderAllLightOrenayer, * shaderEnviroment, * shaderAllLightCookTorrence,
+* shaderSpecMap, * shaderSkybox, * shaderRefraction, * shadernormalMapping,
+* shaderocclussionParallax, * shadersemiTransparent, * shaderdephtMap, * shaderquadDepthMap;
 
 //Textures
 unsigned int textureID;
-unsigned int textureID1, specularMap, normalMap, dispMap, blend;
+unsigned int textureID1, specularMap, normalMap, dispMap, blend, depthMap;
 unsigned int cubemapTexture;
 std::vector<unsigned int> textures;
 
 //skybox
 unsigned int skyboxVAO, skyboxVBO;
-
 
 //MVP Matrix
 glm::mat4 Model;
@@ -56,35 +55,52 @@ glm::mat4 View;
 glm::mat4 Proj;
 
 //Camera
-camera *Camara = new camera();
+camera* Camara = new camera();
 float speedMouse = Camara->getSpeedMouse();
+float currentTime, deltaTime;
+float lastTime = glfwGetTime();
 
 //Lights
-enum modeLight {dir, point};
+enum modeLight { dir, point };
 modeLight mode = dir;
 light* directionalLight = new light(glm::vec3(0.0f, 5.0f, 5.0f));
 std::vector < pointLight* > PointLight;
 spotLight* SpotLight = new spotLight(Camara->getPosition());
 
 //tweakBar
-userInterface *Interface;
+userInterface* Interface;
 
 //Models
-model *object;
+model* object;
 std::vector< model* > modelsObj, lightsObj, transparentObj;
 int lightAnt, modelAnt;
+std::map<float, int> sorted;
+
+//Framebuffer
+//Transformar al espacio de luz
+float near_plane = 1.0f, far_plane = 7.5f;
+glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+glm::mat4 lightView = glm::lookAt(
+	glm::vec3(-2.0f, 4.0f, -1.0f),
+	glm::vec3(0.0f, 0.0f, 0.0f),
+	glm::vec3(0.0f, 1.0f, 0.0f));
+unsigned int depthMapFBO;
+const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+
 /* *
  * Handles the window resize
  * @param{GLFWwindow} window pointer
  * @param{int} new width of the window
  * @param{int} new height of the window
  * */
-void resize(GLFWwindow *window, int width, int height)
+void resize(GLFWwindow* window, int width, int height)
 {
-    windowWidth = width;
-    windowHeight = height;
-    // Sets the OpenGL viewport size and position
-    glViewport(0, 0, windowWidth, windowHeight);
+	windowWidth = width;
+	windowHeight = height;
+	// Sets the OpenGL viewport size and position
+	glViewport(0, 0, windowWidth, windowHeight);
 	Interface->reshape();
 
 }
@@ -148,7 +164,7 @@ void onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	TwMouseButton(a, b);
 }
 
-void onMouseMotion(GLFWwindow* window, double xpos, double ypos) 
+void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 {
 	TwMouseMotion(px(static_cast<int>(xpos)), px(static_cast<int>(ypos)));
 	if (Camara->getCameraMode()) {
@@ -172,6 +188,7 @@ void initUserInterfaceValues()
 {
 	//Model
 	Interface->nModel = 0;
+	Interface->lightView = false;
 	modelAnt = 0;
 	Interface->shinniness = modelsObj[0]->getShinniness();
 	Interface->indexMaterial = modelsObj[0]->getindexMaterial();
@@ -207,7 +224,7 @@ void initUserInterfaceValues()
 	Interface->lightAttSpot = SpotLight->getKAttenuation();
 	Interface->cuttof = SpotLight->getCuttof();
 	Interface->outerCuttof = SpotLight->getOuterCuttof();
-	
+
 }
 /**
  * initialize the user interface
@@ -229,29 +246,29 @@ bool initUserInterface()
  * */
 bool initWindow()
 {
-    // Initialize glfw
-    glfwInit();
-    // Sets the Opegl context to Opengl 3.0
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// Initialize glfw
+	glfwInit();
+	// Sets the Opegl context to Opengl 3.0
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-    // Creates the window
-    window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
-	
-    // The window couldn't be created
-    if (!window)
-    {
-        std::cout << "Failed to create the glfw window" << std::endl;
-        glfwTerminate(); // Stops the glfw program
-        return false;
-    }
+	// Creates the window
+	window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
 
-    // Creates the glfwContext, this has to be made before calling initGlad()
-    glfwMakeContextCurrent(window);
-	
-    // Window resize callback
+	// The window couldn't be created
+	if (!window)
+	{
+		std::cout << "Failed to create the glfw window" << std::endl;
+		glfwTerminate(); // Stops the glfw program
+		return false;
+	}
+
+	// Creates the glfwContext, this has to be made before calling initGlad()
+	glfwMakeContextCurrent(window);
+
+	// Window resize callback
 	glfwSetFramebufferSizeCallback(window, resize);
 
 	glfwSetCursorPosCallback(window, onMouseMotion);
@@ -259,7 +276,7 @@ bool initWindow()
 	glfwSetKeyCallback(window, onKeyPress);
 	glfwSetCharCallback(window, onCharacter);
 	glfwSetWindowSizeCallback(window, onResizeWindow);
-	
+
 	return true;
 }
 
@@ -269,39 +286,39 @@ bool initWindow()
  * */
 bool initGlad()
 {
-    // Initialize glad
-    int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    // If something went wrong during the glad initialization
-    if (!status)
-    {
-        std::cout << status << std::endl;
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return false;
-    }
-    return true;
+	// Initialize glad
+	int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+	// If something went wrong during the glad initialization
+	if (!status)
+	{
+		std::cout << status << std::endl;
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return false;
+	}
+	return true;
 }
 /**
  * Initialize the opengl context
  * */
 void initGL()
 {
-    // Enables the z-buffer test
-    glEnable(GL_DEPTH_TEST);
+	// Enables the z-buffer test
+	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	//Blending
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // Sets the ViewPort
-    glViewport(0, 0, windowWidth, windowHeight);
-    // Sets the clear color
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	// Sets the ViewPort
+	glViewport(0, 0, windowWidth, windowHeight);
+	// Sets the clear color
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
 
 /*
-** Init MVP Matrix 
+** Init MVP Matrix
 */
 
-void initMVP() 
+void initMVP()
 {
 	Model = glm::mat4(1.0f);
 	View = Camara->getView();
@@ -309,7 +326,7 @@ void initMVP()
 
 }
 
-void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector< model* >&arrayObj)
+void buildModel(std::string path, std::vector< glm::vec3 > position, std::vector< model* >& arrayObj)
 {
 	std::vector< glm::vec3 > Vert;
 	std::vector< glm::vec3 > Normal;
@@ -318,13 +335,13 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector<
 	std::vector< glm::vec2 > UV;
 	//Positions
 
-	model *obj = new model(position[0]);
+	model* obj = new model(position[0]);
 	obj->loadObj(path, Vert, Normal, UV);
 	obj->getTangentBitanget(Vert, UV, Normal, Tangent, Bitangent);
-	
+
 	//int nMod = 3;
 	//Load 3 models
-	unsigned int VAOForm[1],  VBOForm[NVBOS], numVertex = Vert.size();
+	unsigned int VAOForm[1], VBOForm[NVBOS], numVertex = Vert.size();
 	// Creates on GPU the vertex array
 	glGenVertexArrays(1, &VAOForm[0]);
 	// Creates on GPU the vertex buffer obj
@@ -350,7 +367,7 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector<
 	// Sets the vertex attributes
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-	
+
 	//normal VBOForm
 	// Sets the buffer geometry data
 	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[2]);
@@ -382,8 +399,8 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector<
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindVertexArray(0);
-	
-	
+
+
 	//Se encolan los modelos que tienen el mismo obj
 	model* obj1;
 	for (size_t i = 0; i < position.size(); i++)
@@ -401,11 +418,11 @@ void buildGeom(std::string path, std::vector< glm::vec3 > position, std::vector<
 		obj1->setPosition(position[i]);
 		arrayObj.push_back(obj1);
 	}
-	
+
 	position.clear();
 }
 
-void buildSkyBox() 
+void buildSkyBox()
 {
 	float skyboxVertices[] = {
 		// positions          
@@ -471,27 +488,36 @@ void buildGeometry()
 {
 	std::vector< std::string > paths;
 	std::vector < glm::vec3 > pos;
-	
+
 	//Positions
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(4.0f, 0.0f, 0.0f));
 	pos.push_back(glm::vec3(-4.0f, 0.0f, 0.0f));
 	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
-	buildGeom(".\\assets\\models\\cube1.obj", pos, modelsObj);
+	buildModel(".\\assets\\models\\sphere1.obj", pos, modelsObj);
+	pos.clear();
+	//Positions
+	pos.push_back(glm::vec3(0.0f, 4.0f, 0.0f));
+	pos.push_back(glm::vec3(4.0f, 4.0f, 0.0f));
+	pos.push_back(glm::vec3(-4.0f, 4.0f, 0.0f));
+	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
+	buildModel(".\\assets\\models\\cube1.obj", pos, modelsObj);
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
 	pos.push_back(glm::vec3(0.0f, 0.0f, 2.0f));
 	pos.push_back(glm::vec3(0.0f, 0.0f, 4.0f));
-	buildGeom(".\\assets\\models\\window.obj", pos, transparentObj);
+	buildModel(".\\assets\\models\\window.obj", pos, transparentObj);
 	std::cout << transparentObj.size() << "\n";
 	//Paths
-	paths.push_back(".\\assets\\models\\plane.obj");
-	//paths.push_back(".\\assets\\models\\cube1.obj");
-	paths.push_back(".\\assets\\models\\cube2.obj");
-	//paths.push_back(".\\assets\\models\\cube3.obj");
-	//paths.push_back(".\\assets\\models\\pokeball.obj");
-	//paths.push_back(".\\assets\\models\\catS.obj");
-	//paths.push_back(".\\assets\\models\\windowERR.obj");
+	/*paths.push_back(".\\assets\\models\\plane.obj");
+	paths.push_back(".\\assets\\models\\cube2.obj");*/
+	pos.clear();
+	pos.push_back(glm::vec3(0.0f));
+	buildModel(".\\assets\\models\\plane.obj", pos, modelsObj);
+	pos.clear();
+	pos.push_back(glm::vec3(4.0f)); 
+	buildModel(".\\assets\\models\\cube2.obj", pos, modelsObj);
+
 
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
@@ -501,73 +527,73 @@ void buildGeometry()
 	pos.push_back(glm::vec3(0.0f));
 	pos.push_back(glm::vec3(0.0f));
 
-	//Load models
-	for (size_t i = 0; i < paths.size(); i++)
-	{
-		object = object->loadObj(paths[i], pos[i]);
+	////Load models
+	//for (size_t i = 0; i < paths.size(); i++)
+	//{
+	//	object = object->loadObj(paths[i], pos[i]);
 
-		// Creates on GPU the vertex array
-		glGenVertexArrays(1, &object->VAO[0]);
-		// Creates on GPU the vertex buffer object
-		glGenBuffers(NVBOS, object->VBO);
-		// Binds the vertex array to set all the its properties
-		glBindVertexArray(object->VAO[0]);
+	//	// Creates on GPU the vertex array
+	//	glGenVertexArrays(1, &object->VAO[0]);
+	//	// Creates on GPU the vertex buffer object
+	//	glGenBuffers(NVBOS, object->VBO);
+	//	// Binds the vertex array to set all the its properties
+	//	glBindVertexArray(object->VAO[0]);
 
-		//vexter position object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
-		//vertex position position object->VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	
-		//uv object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
+	//	//vexter position object->VBO
+	//	// Sets the buffer geometry data
+	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[0]);
+	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->vertex.size(), &object->vertex[0], GL_STATIC_DRAW);
+	//	//vertex position position object->VAO
+	//	// Sets the vertex attributes
+	//	glEnableVertexAttribArray(0);
+	//	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-		//uv object->VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-		//glBindVertexArray(0);
-		//color object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
+	//	//uv object->VBO
+	//	// Sets the buffer geometry data
+	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[1]);
+	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * object->uv.size(), &object->uv[0], GL_STATIC_DRAW);
 
-		//color object->VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	//	//uv object->VAO
+	//	// Sets the vertex attributes
+	//	glEnableVertexAttribArray(1);
+	//	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	//	//glBindVertexArray(0);
+	//	//color object->VBO
+	//	// Sets the buffer geometry data
+	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[2]);
+	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->normal.size(), &object->normal[0], GL_STATIC_DRAW);
 
-		//Tangent object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[3]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->tangent.size(), &object->tangent[0], GL_STATIC_DRAW);
+	//	//color object->VAO
+	//	// Sets the vertex attributes
+	//	glEnableVertexAttribArray(2);
+	//	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-		//Tangent object.VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	//	//Tangent object->VBO
+	//	// Sets the buffer geometry data
+	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[3]);
+	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->tangent.size(), &object->tangent[0], GL_STATIC_DRAW);
 
-		//Bitangent object->VBO
-		// Sets the buffer geometry data
-		glBindBuffer(GL_ARRAY_BUFFER, object->VBO[4]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->bitangent.size(), &object->bitangent[0], GL_STATIC_DRAW);
+	//	//Tangent object.VAO
+	//	// Sets the vertex attributes
+	//	glEnableVertexAttribArray(3);
+	//	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-		//Bitangent object.VAO
-		// Sets the vertex attributes
-		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	//	//Bitangent object->VBO
+	//	// Sets the buffer geometry data
+	//	glBindBuffer(GL_ARRAY_BUFFER, object->VBO[4]);
+	//	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * object->bitangent.size(), &object->bitangent[0], GL_STATIC_DRAW);
 
-		glBindVertexArray(0);
-	
-		//object->setPosition(pos[i]);
-		modelsObj.push_back(object);
-	}
-	
+	//	//Bitangent object.VAO
+	//	// Sets the vertex attributes
+	//	glEnableVertexAttribArray(4);
+	//	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	//	glBindVertexArray(0);
+
+	//	//object->setPosition(pos[i]);
+	//	modelsObj.push_back(object);
+	//}
+
 	object = object->loadObj(".\\assets\\models\\pointlight.obj", glm::vec3(0.0f));
 	//Load Lights
 	for (size_t i = 0; i < N_POINTLIGHTS; i++)
@@ -621,63 +647,63 @@ void buildGeometry()
  * @param{const char} path of the texture file
  * @returns{unsigned int} GPU texture index
  * */
-unsigned int loadTexture(const char *path)
+unsigned int loadTexture(const char* path)
 {
-    unsigned int id;
-    // Creates the texture on GPU
-    glGenTextures(1, &id);
-    // Loads the texture
-    int textureWidth, textureHeight, numberOfChannels;
-    // Flips the texture when loads it because in opengl the texture coordinates are flipped
-    stbi_set_flip_vertically_on_load(true);
-    // Loads the texture file data
-    unsigned char *data = stbi_load(path, &textureWidth, &textureHeight, &numberOfChannels, 0);
-    if (data)
-    {
-        // Gets the texture channel format
-        GLenum format;
-        switch (numberOfChannels)
-        {
-        case 1:
-            format = GL_RED;
-            break;
-        case 3:
-            format = GL_RGB;
-            break;
-        case 4:
-            format = GL_RGBA;
-            break;
-        }
+	unsigned int id;
+	// Creates the texture on GPU
+	glGenTextures(1, &id);
+	// Loads the texture
+	int textureWidth, textureHeight, numberOfChannels;
+	// Flips the texture when loads it because in opengl the texture coordinates are flipped
+	stbi_set_flip_vertically_on_load(true);
+	// Loads the texture file data
+	unsigned char* data = stbi_load(path, &textureWidth, &textureHeight, &numberOfChannels, 0);
+	if (data)
+	{
+		// Gets the texture channel format
+		GLenum format;
+		switch (numberOfChannels)
+		{
+		case 1:
+			format = GL_RED;
+			break;
+		case 3:
+			format = GL_RGB;
+			break;
+		case 4:
+			format = GL_RGBA;
+			break;
+		}
 
-        // Binds the texture
-        glBindTexture(GL_TEXTURE_2D, id);
-        // Creates the texture
-        glTexImage2D(GL_TEXTURE_2D, 0, format, textureWidth, textureHeight, 0, format, GL_UNSIGNED_BYTE, data);
-        // Creates the texture mipmaps
-        glGenerateMipmap(GL_TEXTURE_2D);
+		// Binds the texture
+		glBindTexture(GL_TEXTURE_2D, id);
+		// Creates the texture
+		glTexImage2D(GL_TEXTURE_2D, 0, format, textureWidth, textureHeight, 0, format, GL_UNSIGNED_BYTE, data);
+		// Creates the texture mipmaps
+		glGenerateMipmap(GL_TEXTURE_2D);
 
-        // Set the filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else
-    {
-        std::cout << "ERROR:: Unable to load texture " << path << std::endl;
-        glDeleteTextures(1, &id);
-    }
-    // We dont need the data texture anymore because is loaded on the GPU
-    stbi_image_free(data);
+		// Set the filtering parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else
+	{
+		std::cout << "ERROR:: Unable to load texture " << path << std::endl;
+		glDeleteTextures(1, &id);
+	}
+	// We dont need the data texture anymore because is loaded on the GPU
+	stbi_image_free(data);
 
-    return id;
+	return id;
 }
 
-void initLights() 
+void initLights()
 {
-	pointLight *light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
+	pointLight* light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
 	light1->setDiffuseColor(glm::vec3(0.2f));
-	pointLight *light2 = new pointLight(glm::vec3(2.0f, 0.0f, -2.0f));
+	pointLight* light2 = new pointLight(glm::vec3(2.0f, 0.0f, -2.0f));
 	light2->setDiffuseColor(glm::vec3(0.2f));
 
 	PointLight.push_back(light1);
@@ -729,8 +755,12 @@ void initTexture() {
 	blend = loadTexture("assets/textures/blending_transparent_window.png");
 
 	textures.push_back(textureID);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
 	specularMap = loadTexture("assets/textures/container2_specular.png");
 	//Load skybox
 	std::vector<std::string> faces
@@ -746,21 +776,44 @@ void initTexture() {
 	//textures.push_back(cubemapTexture);
 
 }
+void initFramebuffer() {
 
+	//Creamos el objeto de framebuffer
+	glGenFramebuffers(1, &depthMapFBO);
+
+	//creamos una textura 2D que usaremos como buffer de profundidad del framebuffer
+
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	//Con la textura de profundidad generada podemos adjuntarla como b�fer de profundidad del framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
 /**
  * Initialize everything
  * @returns{bool} true if everything goes ok
  * */
 bool init()
 {
-    // Initialize the window, the interface and the glad components
-    if (!initWindow() || !initGlad() || !initUserInterface())
-        return false;
+	// Initialize the window, the interface and the glad components
+	if (!initWindow() || !initGlad() || !initUserInterface())
+		return false;
 
-    // Initialize the opengl context
-    initGL();
+	// Initialize the opengl context
+	initGL();
 
-    // Loads the shader
+	// Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 	/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 	shaderPointLight = new Shader("assets/shaders/lightPoint.vert", "assets/shaders/lightPoint.frag");*/
@@ -774,24 +827,30 @@ bool init()
 	shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
 	shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 	shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
+	shaderdephtMap = new Shader("assets/shaders/dephtMap.vert", "assets/shaders/dephtMap.frag");
+	shaderquadDepthMap = new Shader("assets/shaders/quadDepthMap.vert", "assets/shaders/quadDepthMap.frag");
+
 	//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
-    // Loads all the geometry into the GPU
-    buildGeometry();
-    
+	// Loads all the geometry into the GPU
+	buildGeometry();
+
+	//Framebuffer
+	initFramebuffer();
+
 	// Loads the texture into the GPU
 	initTexture();
 
 	//Initializate MVP values
 	initMVP();
-	
+
 	//Initializate lights
 	initLights();
 
 	//Init values of tweakbar
 	initUserInterfaceValues();
 
-    return true;
+	return true;
 }
 /**
  * Process the keyboard input
@@ -799,20 +858,20 @@ bool init()
  * the GLFW API, check the GLFW documentation to find more
  * @param{GLFWwindow} window pointer
  * */
-void processKeyboardInput(GLFWwindow *window)
+void processKeyboardInput(GLFWwindow* window)
 {
-    // Checks if the escape key is pressed
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        // Tells glfw to close the window as soon as possible
-        glfwSetWindowShouldClose(window, true);
+	// Checks if the escape key is pressed
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		// Tells glfw to close the window as soon as possible
+		glfwSetWindowShouldClose(window, true);
 
-    // Checks if the r key is pressed
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-    {
-        // Reloads the shader
+	// Checks if the r key is pressed
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+	{
+		// Reloads the shader
 		delete shader;
-	/*	delete shaderDirLight;
-		delete shaderPointLight;*/
+		/*	delete shaderDirLight;
+			delete shaderPointLight;*/
 		delete shaderEnviroment;
 		delete shaderAllLight;
 		delete shaderAllLightOrenayer;
@@ -822,7 +881,9 @@ void processKeyboardInput(GLFWwindow *window)
 		delete shadersemiTransparent;
 		delete shaderSpecMap;
 		delete shaderSkybox;
+		delete shaderdephtMap;
 		delete shadernormalMapping;
+		delete shaderquadDepthMap;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		/*shaderDirLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");*/
@@ -831,29 +892,32 @@ void processKeyboardInput(GLFWwindow *window)
 		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 		shaderRefraction = new Shader("assets/shaders/refraction.vert", "assets/shaders/refraction.frag");
 		shaderAllLightOrenayer = new Shader("assets/shaders/allLightOrenayer.vert", "assets/shaders/allLightOrenayer.frag");
+		shaderdephtMap = new Shader("assets/shaders/dephtMap.vert", "assets/shaders/dephtMap.frag");
 		shaderSkybox = new Shader("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
 		shaderSpecMap = new Shader("assets/shaders/specMap.vert", "assets/shaders/specMap.frag");
 		shaderAllLightCookTorrence = new Shader("assets/shaders/allLightCookTorrence.vert", "assets/shaders/allLightCookTorrence.frag");
 		shaderocclussionParallax = new Shader("assets/shaders/occlussionParallax.vert", "assets/shaders/occlussionParallax.frag");
 		shadersemiTransparent = new Shader("assets/shaders/semiTransparent.vert", "assets/shaders/semiTransparent.frag");
 		shadernormalMapping = new Shader("assets/shaders/normalMapping.vert", "assets/shaders/normalMapping.frag");
+		shaderquadDepthMap = new Shader("assets/shaders/quadDepthMap.vert", "assets/shaders/quadDepthMap.frag");
+
 		//shaderAllLight = new Shader("assets/shaders/lightDirectional.vert", "assets/shaders/lightDirectional.frag");
 
-    }
-	
+	}
+
 	//Move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		Camara->updateInputKeyboard('w');
-		
+
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		Camara->updateInputKeyboard('s');
-		
+
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		Camara->updateInputKeyboard('a');
-		
+
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		Camara->updateInputKeyboard('d');
-	
+
 	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
 		directionalLight->changeONOFF();
 
@@ -867,7 +931,7 @@ void updateMVP(int i, glm::vec3 pos)
 	Model = glm::mat4(1.0f);
 
 	Model = glm::translate(glm::mat4(1.0f), pos);
-	
+
 	View = Camara->getView();
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
 }
@@ -957,47 +1021,47 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	/*for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 	*/	//MVP trnasformations
-		updateMVP(i, arrayObj[i]->getPosition());
-		shaderActual->setMat4("Model", Model);
-		shaderActual->setMat4("View", View);
-		shaderActual->setMat4("Proj", Proj);
-		
-		//Material
-		shaderActual->setVec3("ka", arrayObj[i]->getKAmbient());
-		shaderActual->setVec3("kd", arrayObj[i]->getKDiffuse());
-		shaderActual->setVec3("ks", arrayObj[i]->getKSpecular());
-		shaderActual->setFloat("n", arrayObj[i]->getShinniness());
-		shaderActual->setFloat("indexMaterial", arrayObj[i]->getindexMaterial());
-		shaderActual->setFloat("indexAmbiental", arrayObj[i]->getindexAmbient());
-		shaderActual->setFloat("intensityParalax", arrayObj[i]->getintensityParalax());
-		shaderActual->setFloat("percentAmbient", arrayObj[i]->getpercentAmbient());
-		shaderActual->setFloat("roughness", arrayObj[i]->getRoughness());
-		shaderActual->setBool("albedo", arrayObj[i]->getAlbedo());
+	updateMVP(i, arrayObj[i]->getPosition());
+	shaderActual->setMat4("Model", Model);
+	shaderActual->setMat4("View", View);
+	shaderActual->setMat4("Proj", Proj);
 
-		//Texture
-		
-		glActiveTexture(GL_TEXTURE0 + textures[i] - 1);
-		glBindTexture(GL_TEXTURE_2D, textures[i]);
-		shaderActual->setInt("text", textures[i] - 1);
-		
-		glActiveTexture(GL_TEXTURE0 + specularMap - 1);
-		glBindTexture(GL_TEXTURE_2D, specularMap);
-		shaderActual->setInt("specMap", specularMap - 1);
-		
-		glActiveTexture(GL_TEXTURE0 + normalMap - 1);
-		glBindTexture(GL_TEXTURE_2D, normalMap);
-		shaderActual->setInt("normalMap", normalMap - 1);
-		
-		glActiveTexture(GL_TEXTURE0 + dispMap - 1);
-		glBindTexture(GL_TEXTURE_2D, dispMap);
-		shaderActual->setInt("dispMap", dispMap - 1);
+	//Material
+	shaderActual->setVec3("ka", arrayObj[i]->getKAmbient());
+	shaderActual->setVec3("kd", arrayObj[i]->getKDiffuse());
+	shaderActual->setVec3("ks", arrayObj[i]->getKSpecular());
+	shaderActual->setFloat("n", arrayObj[i]->getShinniness());
+	shaderActual->setFloat("indexMaterial", arrayObj[i]->getindexMaterial());
+	shaderActual->setFloat("indexAmbiental", arrayObj[i]->getindexAmbient());
+	shaderActual->setFloat("intensityParalax", arrayObj[i]->getintensityParalax());
+	shaderActual->setFloat("percentAmbient", arrayObj[i]->getpercentAmbient());
+	shaderActual->setFloat("roughness", arrayObj[i]->getRoughness());
+	shaderActual->setBool("albedo", arrayObj[i]->getAlbedo());
 
-		// Binds the vertex array to be drawn
-		glBindVertexArray(arrayObj[i]->VAO[0]);
-    
-		// Renders the triangle gemotry
-		glDrawArrays(GL_TRIANGLES, 0, arrayObj[i]->numVertex);
-		
+	//Texture
+
+	glActiveTexture(GL_TEXTURE0 + textures[i] - 1);
+	glBindTexture(GL_TEXTURE_2D, textures[i]);
+	shaderActual->setInt("text", textures[i] - 1);
+
+	glActiveTexture(GL_TEXTURE0 + specularMap - 1);
+	glBindTexture(GL_TEXTURE_2D, specularMap);
+	shaderActual->setInt("specMap", specularMap - 1);
+
+	glActiveTexture(GL_TEXTURE0 + normalMap - 1);
+	glBindTexture(GL_TEXTURE_2D, normalMap);
+	shaderActual->setInt("normalMap", normalMap - 1);
+
+	glActiveTexture(GL_TEXTURE0 + dispMap - 1);
+	glBindTexture(GL_TEXTURE_2D, dispMap);
+	shaderActual->setInt("dispMap", dispMap - 1);
+
+	// Binds the vertex array to be drawn
+	glBindVertexArray(arrayObj[i]->VAO[0]);
+
+	// Renders the triangle gemotry
+	glDrawArrays(GL_TRIANGLES, 0, arrayObj[i]->numVertex);
+
 	/*}
 */
 	glBindVertexArray(0);
@@ -1005,14 +1069,14 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 
 }
 
-void updateUserInterface() 
+void updateUserInterface()
 {
 	//Model
 	int nMod = Interface->nModel;
 	if (nMod >= modelsObj.size()) nMod = modelsObj.size() - 1;
 	if (modelAnt != nMod)
 	{
-		//Nueva selecci�n 
+		//Nueva selección 
 		//(actualizamos tweakbar con los atributos del modelo seleccionado)
 		Interface->ambientColorMtl = modelsObj[nMod]->getKAmbient();
 		Interface->diffuseColorMtl = modelsObj[nMod]->getKDiffuse();
@@ -1040,7 +1104,7 @@ void updateUserInterface()
 
 	modelsObj[nMod]->setAlbedo(Interface->albedo);
 	modelsObj[nMod]->setShader(Interface->getShader());
-	
+
 	//Light dir
 	directionalLight->setLightDir(Interface->direction);
 	directionalLight->setAmbientColor(Interface->ambientColor);
@@ -1050,7 +1114,7 @@ void updateUserInterface()
 
 	//Point lights
 	int nLight = Interface->nPointLight;
-	
+
 	if (lightAnt != nLight)
 	{
 		Interface->onLightPoint = PointLight[nLight]->getONOFF();
@@ -1078,7 +1142,7 @@ void updateUserInterface()
 	SpotLight->setONOFF(Interface->onLightSpot);
 	SpotLight->setKAttenuation(Interface->lightAttSpot);
 
-	}
+}
 
 void drawSkybox()
 {
@@ -1091,7 +1155,7 @@ void drawSkybox()
 	shaderSkybox->setInt("skybox", 0);
 
 	// skybox cube
-	glDepthFunc(GL_LEQUAL);  
+	glDepthFunc(GL_LEQUAL);
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
@@ -1099,117 +1163,215 @@ void drawSkybox()
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS);
 }
-/**
- * Render Function
- * */
-void render()
+
+void renderModels()
 {
-    // Clears the color and depth buffers from the frame buffer
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    /** Draws code goes here **/
-    // Use the shader
-	Shader* shaderActual = shaderAllLight;
-	
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
 		char shad = modelsObj[i]->getShader();
 		switch (shad)
 		{
 			//Blinn
-			case 'b':
+		case 'b':
 			renderObj(shaderAllLight, i, modelsObj);
-				break;
+			break;
 			//Cook torrance
-			case 'c':
+		case 'c':
 			renderObj(shaderAllLightCookTorrence, i, modelsObj);
-				break;
+			break;
 			//Oren nayar
-			case 'o':
+		case 'o':
 			renderObj(shaderAllLightOrenayer, i, modelsObj);
-				break;
+			break;
 			//Normal mapping
-			case 'n':
-				renderObj(shadernormalMapping, i, modelsObj);
-				break;
+		case 'n':
+			renderObj(shadernormalMapping, i, modelsObj);
+			break;
 			//Occlussion parallax mapping
-			case 'p':
-				renderObj(shaderocclussionParallax, i, modelsObj);
-				break;
+		case 'p':
+			renderObj(shaderocclussionParallax, i, modelsObj);
+			break;
 			//Refraction
-			case 'r':
-				renderObj(shaderRefraction, i, modelsObj);
-				break;
+		case 'r':
+			renderObj(shaderRefraction, i, modelsObj);
+			break;
 			//Reflection
-			case 'l':
-				renderObj(shaderEnviroment, i, modelsObj);
-				break;
+		case 'l':
+			renderObj(shaderEnviroment, i, modelsObj);
+			break;
 			//Objetos semitransparents
-			case 't':
+		case 't':
 
-				renderObj(shadersemiTransparent, i, modelsObj);
-				glActiveTexture(GL_TEXTURE0 + blend - 1);
-				glBindTexture(GL_TEXTURE_2D, blend);
-				shadersemiTransparent->setInt("blend", blend - 1);
-				break;
-			default:
-				break;
+			renderObj(shadersemiTransparent, i, modelsObj);
+			glActiveTexture(GL_TEXTURE0 + blend - 1);
+			glBindTexture(GL_TEXTURE_2D, blend);
+			shadersemiTransparent->setInt("blend", blend - 1);
+			break;
+		default:
+			break;
 		}
 	}
-	std::map<float, int> sorted;
 	for (unsigned int i = 0; i < transparentObj.size(); i++)
 	{
 		float distance = glm::length(Camara->getPosition() - transparentObj[i]->getPosition());
 		sorted[distance] = i;
 	}
 	//Draw semitransparent objects
-	/*for (size_t i = 0; i < transparentObj.size(); i++)
+	for (size_t i = 0; i < transparentObj.size(); i++)
 	{
 		renderObj(shadersemiTransparent, i, transparentObj);
 		glActiveTexture(GL_TEXTURE0 + blend - 1);
 		glBindTexture(GL_TEXTURE_2D, blend);
 		shadersemiTransparent->setInt("blend", blend - 1);
-	}*/
-	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
-	{
-		renderObj(shadersemiTransparent, it->second, transparentObj);
-		glActiveTexture(GL_TEXTURE0 + blend - 1);
-		glBindTexture(GL_TEXTURE_2D, blend);
-		shadersemiTransparent->setInt("blend", blend - 1);
-
 	}
 	//Lights
 	drawLights();
-	
+
 	//Skybox
 	drawSkybox();
+}
 
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
+
+/*
+* Escena desde el punto de vista de la luz para shadow mapping
+*/
+void renderLightView()
+{
+	/*prepare framebuffer*/
+	shaderdephtMap->use();
+	glm::mat4 lightSpaceMatrix;
+	float near_plane = 1.0f, far_plane = 50.5f;
+	//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+	lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
+	lightView = glm::lookAt(directionalLight->getLightDir(), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+	lightSpaceMatrix = lightProjection * lightView;
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	//depth mapp
+	for (size_t i = 0; i < modelsObj.size(); i++)
+	{
+		shaderdephtMap->use();
+		updateMVP(i, modelsObj[i]->getPosition());
+		shaderdephtMap->setMat4("model", Model);
+		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		glBindVertexArray(modelsObj[i]->VAO[0]);
+		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
+		glBindVertexArray(0);
+
+
+	}
+	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+	{
+		renderObj(shaderdephtMap, it->second, transparentObj);
+		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+	}
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// reset viewport
+	glViewport(0, 0, windowWidth, windowHeight);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//pintar quad
+	shaderquadDepthMap->use();
+	shaderquadDepthMap->setInt("depthMap", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	renderQuad();
+
+}
+/**
+ * Render Function
+ * */
+void render()
+{
+	// Clears the color and depth buffers from the frame buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	/*prepare framebuffer*/
+	
+	/** Draws code goes here **/
+
+	renderModels();
+	
+	if(Interface->lightView)
+		renderLightView();
+	
 	//tweakbar
 	TwDraw();
 
 	//Update
 	updateUserInterface();
 
-    // Swap the buffer
-    glfwSwapBuffers(window);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// reset viewport
+	//glViewport(0, 0, windowWidth, windowHeight);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Swap the buffer
+	glfwSwapBuffers(window);
 }
+/*
+* change speed
+*/
+void updateCameraSpeed() 
+{
+	currentTime = glfwGetTime();
+	deltaTime = currentTime - lastTime;
+	lastTime = currentTime;
+
+	Camara->setDeltatime(deltaTime);
+}
+
+
 /**
  * App main loop
  * */
 void update()
 {
-    // Loop until something tells the window, that it has to be closed
-    while (!glfwWindowShouldClose(window))
-    {
-        // Checks for keyboard inputs
-        processKeyboardInput(window);
+	// Loop until something tells the window, that it has to be closed
+	while (!glfwWindowShouldClose(window))
+	{
+		//Update camera speed
+		updateCameraSpeed();
+		// Checks for keyboard inputs
+		processKeyboardInput(window);
 
-        // Renders everything
-        render();
+		// Renders everything
+		render();
 
-		
-        // Check and call events
-        glfwPollEvents();
-    }
+
+		// Check and call events
+		glfwPollEvents();
+	}
 }
 
 
@@ -1219,24 +1381,24 @@ void update()
  * @param{char const *[]} running arguments
  * @returns{int} app exit code
  * */
-int main(int argc, char const *argv[])
+int main(int argc, char const* argv[])
 {
-    // Initialize all the app components
-    if (!init())
-    {
-        // Something went wrong
-        std::cin.ignore();
-        return -1;
-    }
+	// Initialize all the app components
+	if (!init())
+	{
+		// Something went wrong
+		std::cin.ignore();
+		return -1;
+	}
 
-    std::cout << "=====================================================" << std::endl
-              << "        Press Escape to close the program            " << std::endl
-              << "=====================================================" << std::endl;
+	std::cout << "=====================================================" << std::endl
+		<< "        Press Escape to close the program            " << std::endl
+		<< "=====================================================" << std::endl;
 
-    // Starts the app main loop
-    update();
+	// Starts the app main loop
+	update();
 
-    // Deletes the texture from the gpu
+	// Deletes the texture from the gpu
 	glDeleteTextures(1, &textureID);
 	glDeleteTextures(1, &textureID1);
 	glDeleteTextures(1, &normalMap);
@@ -1244,7 +1406,7 @@ int main(int argc, char const *argv[])
 	glDeleteTextures(1, &dispMap);
 	glDeleteTextures(1, &blend);
 	glDeleteTextures(1, &cubemapTexture);
-	
+
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
@@ -1272,14 +1434,16 @@ int main(int argc, char const *argv[])
 	delete shadersemiTransparent;
 	delete shaderSpecMap;
 	delete shaderSkybox;
+	delete shaderdephtMap;
+	delete shaderquadDepthMap;
 	delete Camara;
 	delete SpotLight;
 	delete directionalLight;
 	delete object;
 	delete Interface;
 	TwTerminate();
-    // Stops the glfw program
-    glfwTerminate();
+	// Stops the glfw program
+	glfwTerminate();
 
-    return 0;
+	return 0;
 }

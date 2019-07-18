@@ -59,7 +59,7 @@ out vec4 color;
 
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 {
-    vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
+    vec3 LightDir = normalize(-( lightDir)); // Solo usamos la entrada del tweakbar
     vec3 reflectDir = reflect(-LightDir, Normal);
     vec3 halfwayDir = normalize(LightDir + ViewDir);
     //Material with lightDir components
@@ -137,11 +137,9 @@ void main()
 {
     //Datos de vital importancia para todos
     vec3 normal = normalize(Normal);
-    // obtain normal from normal map in range [0,1]
-    normal = texture(normalMap, texCoord).rgb;
-    // transform normal vector to range [-1,1]
-    normal = normalize(normal * 2.0 - 1.0);
-    normal = normalize(TBN * normal);
+    normal = (texture(normalMap, texCoord).rgb);
+    // normal = normalize(normal * 2.0 - 1.0)   ;
+    normal = normalize(transpose(mat3(Tangent, Bitangent, Normal)) * normal);
     vec3 ViewDir = normalize(viewPos - fragPos.xyz);
     
     vec3 result;
@@ -161,8 +159,13 @@ void main()
         if(texture2D(text, texCoord).a < 0.1)
             discard;
     }
+    //pruebas
+    color = vec4((normal), 1.0f);
+    color = vec4(normalize(Normal), 1.0f);
+    color = vec4((Tangent), 1.0f);
+    //Resultado
     color = vec4(result, 1.0f);
-    
+
     //Texture
     // color = color /* texture2D(text, texCoord).rgb*/;
     // color = vec4(Normal, 0.0f);

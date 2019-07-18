@@ -31,6 +31,7 @@ public:
 	float intensityParalax;
 	float percentAmbient;
 	bool albedo;
+	bool lightView;
 	glm::vec3 ambientColorMtl;
 	glm::vec3 diffuseColorMtl;
 	glm::vec3 specularColorMtl;

@@ -177,8 +177,10 @@ vec2 StepParallaxMapping(vec2 texCoords, vec3 viewDir)
 
 vec2 OcclussionParallaxMapping(vec2 texCoords, vec3 viewDir)
 { 
+    const float minLayers = 8;
+    const float maxLayers = 32;
     // number of depth layers
-    const float numLayers = 10;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0,0.0,1.0), viewDir)));
     // calculate the size of each layer
     float layerDepth = 1.0 / numLayers;
     // depth of current layer
@@ -218,12 +220,11 @@ void main()
     //Datos de vital importancia para todos
     vec3 normal = normalize(Normal);
     vec3 ViewDir = normalize(TangentViewPos - TangentFragPos.xyz);
-    vec2 TexCoord = OcclussionParallaxMapping(texCoord,  ViewDir);
-    // obtain normal from normal map in range [0,1]
+    //vec2(transpose(mat3(Tangent, Bitangent, Normal)) * vec3(texCoord, 1.0f))
+    vec2 TexCoord = OcclussionParallaxMapping(texCoord ,  ViewDir);
     normal = texture(normalMap, TexCoord).rgb;
-    // transform normal vector to range [-1,1]
     normal = normalize(normal * 2.0 - 1.0);
-    normal = normalize(TBN * normal);
+    normal = normalize(transpose(mat3(Tangent, Bitangent, Normal)) * normal);
 
     vec3 result;
     if(!albedo)

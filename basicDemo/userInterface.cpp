@@ -25,7 +25,7 @@ userInterface::userInterface()
 	{TRANS, "Semitransparent"} };
 	shader = BLINN;
 	shaderType = TwDefineEnum("shaderType", shaders, 8);
-
+	TwAddVarRW(mUserInterface, "lightView", TW_TYPE_BOOLCPP, &lightView, " label='Light view' ");
 	TwAddVarRW(mUserInterface, "nModel", TW_TYPE_UINT32, &nModel, " group='Modelselect' min=0 label='Select model' step=1 ");
 	TwAddVarRW(mUserInterface, "Display", shaderType, &shader, " group='Modelselect' label='Shader' ");
 	TwAddVarRW(mUserInterface, "albedo", TW_TYPE_BOOLCPP, &albedo, " group='Modelselect' label='Diffuse map' ");

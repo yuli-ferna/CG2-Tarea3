@@ -16,7 +16,7 @@ glm::mat4 camera::getRotation()
 camera::camera()
 {
 	cameraMode = false;
-	speed = 0.1f;
+	speed = 5.5f;
 	speedMouse = 0.05f;
 	position = glm::vec3(0.0f, 0.5f, 3.0f);
 	front = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -61,13 +61,13 @@ void camera::updateInputMouse(GLfloat offsetX, GLfloat offsetY)
 void camera::updateInputKeyboard(const char direction)
 {
 	if (direction == 'w')		
-		position += speed * front;
+		position += speed * deltaTime * front;
 	if (direction == 's')		
-		position -= speed * front;
+		position -= speed * deltaTime * front;
 	if (direction == 'a')		
-		position -= glm::normalize(glm::cross(front, up)) * speed;
+		position -= glm::normalize(glm::cross(front, up)) * speed * deltaTime;
 	if (direction == 'd')		
-		position += glm::normalize(glm::cross(front, up)) * speed;
+		position += glm::normalize(glm::cross(front, up)) * speed * deltaTime;
 }
 
 bool camera::getCameraMode()
@@ -103,4 +103,14 @@ float camera::getSpeed()
 void camera::setSpeed(float speedK)
 {
 	speed = speedK;
+}
+
+float camera::getDeltatime()
+{
+	return deltaTime;
+}
+
+void camera::setDeltatime(float speed)
+{
+	deltaTime = speed;
 }
