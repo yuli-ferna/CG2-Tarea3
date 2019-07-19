@@ -19,6 +19,6 @@ void main()
     vec3 I = normalize(fragPos - viewPos);
     // vec3 R = refract(I, normalize(Normal), ratio);
     vec3 R = reflect(I, normalize(Normal));
-
+    
     color = texture(blend, texCoord);
 }

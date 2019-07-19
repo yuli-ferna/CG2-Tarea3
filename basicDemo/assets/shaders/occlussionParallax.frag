@@ -9,12 +9,14 @@ in mat3 TBN;
 in vec3 TangentLightPos;
 in vec3 TangentViewPos;
 in vec3 TangentFragPos;
+in vec4 FragPosLightSpace;
 
 //Texture
 uniform sampler2D text;
 // uniform sampler2D specMap;
 uniform sampler2D normalMap;
 uniform sampler2D dispMap;
+uniform sampler2D shadowMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -61,6 +63,29 @@ uniform float intensityParalax;
 // Fragment Color
 out vec4 color;
 
+float intensityShadow(vec3 Normal, vec3 LightDir, vec4 FragPosLightSpace)
+{
+    vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5; 
+    float closestDepth = texture(shadowMap, projCoords.xy).r;   
+    float currentDepth = projCoords.z;  
+    float bias = max(0.05 * (1.0 - dot(normalize(Normal), LightDir)), 0.005);  
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
+    shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= 9.0;
+    return shadow;
+}
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 {
     vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
@@ -73,7 +98,9 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
     vec3 diffuse  = diffuseColorK * diffuseColor * max(0.0, dot(Normal, LightDir));
     vec3 specular = ks * specularColor * pow(max(0.0, dot(reflectDir, halfwayDir)), n);
 
-    return ambient + diffuse + specular;
+    float shadow = intensityShadow(Normal, LightDir, FragPosLightSpace);
+
+    return (ambient + (1.0 - shadow) * (diffuse + specular));
 }
 
 vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 diffuseColorK)

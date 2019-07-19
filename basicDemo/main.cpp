@@ -35,8 +35,7 @@ const char* windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow* window;
 // Shader object
-Shader* shader, * shaderDirLight, * shaderPointLight,
-* shaderAllLight, * shaderAllLightOrenayer, * shaderEnviroment, * shaderAllLightCookTorrence,
+Shader* shader,* shaderAllLight, * shaderAllLightOrenayer, * shaderEnviroment, * shaderAllLightCookTorrence,
 * shaderSpecMap, * shaderSkybox, * shaderRefraction, * shadernormalMapping,
 * shaderocclussionParallax, * shadersemiTransparent, * shaderdephtMap, * shaderquadDepthMap,
 * shadershadowMapping;
@@ -927,6 +926,7 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	{
 		std::string it = std::to_string(ii);
 		//shaderActual->setVec3("pointLights[" + it + "].position", glm::vec3(2.0f, 0.0f, -2.0f));
+		shaderActual->setVec3("pointLight[" + it + "]", PointLight[ii]->getLightPos());
 		shaderActual->setVec3("pointLights[" + it + "].position", PointLight[ii]->getLightPos());
 		shaderActual->setVec3("pointLights[" + it + "].ambientColor", PointLight[ii]->getAmbientColor());
 		shaderActual->setVec3("pointLights[" + it + "].diffuseColor", PointLight[ii]->getDiffuseColor());
@@ -1104,6 +1104,7 @@ void renderModels()
 	updateLightSpaceMatrix();
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
+
 		char shad = modelsObj[i]->getShader();
 		switch (shad)
 		{
@@ -1224,6 +1225,7 @@ void renderLightView()
 		updateMVP(i, transparentObj[i]->getPosition());
 		shaderdephtMap->setMat4("model", Model);
 		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
 		glBindVertexArray(transparentObj[i]->VAO[0]);
 		glDrawArrays(GL_TRIANGLES, 0, transparentObj[i]->numVertex);
 		glBindVertexArray(0);

@@ -15,6 +15,8 @@ layout (location = 4) in vec3 vertexBitangent;
 uniform mat4 Model;
 uniform mat4 View;
 uniform mat4 Proj;
+uniform mat4 lightSpaceMatrix;
+
 //Camera
 uniform vec3 viewPos;
 //Light
@@ -31,6 +33,7 @@ out mat3 TBN;
 out vec3 TangentLightPos;
 out vec3 TangentViewPos;
 out vec3 TangentFragPos;
+out vec4 FragPosLightSpace;
 
 void main()
 {
@@ -44,6 +47,7 @@ void main()
     Bitangent = cross(Normal, Tangent);
     //Armando la TBN
     TBN = transpose(mat3(Tangent, Bitangent, Normal));
+    FragPosLightSpace = lightSpaceMatrix * vec4(fragPos, 1.0);
 
     // Calculate tangent
     TangentLightPos = TBN * lightDir;

@@ -61,6 +61,7 @@ float intensityShadow(vec3 Normal, vec3 LightDir, vec4 FragPosLightSpace)
     projCoords = projCoords * 0.5 + 0.5; 
     float closestDepth = texture(shadowMap, projCoords.xy).r;   
     float currentDepth = projCoords.z;  
+    if(currentDepth > 1.0f) return 0.0;
     float bias = max(0.05 * (1.0 - dot(normalize(Normal), LightDir)), 0.005);  
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     if(projCoords.z > 1.0)

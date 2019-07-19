@@ -3,10 +3,12 @@
 in vec3 Normal;
 in vec3 fragPos;
 in vec2 texCoord;
+in vec4 FragPosLightSpace;
 
 //Texture
 uniform sampler2D text;
 uniform sampler2D sepcMap;
+uniform sampler2D shadowMap;
 
 //Camera
 uniform vec3 viewPos;
@@ -82,6 +84,30 @@ float calculateCookTorrence(float NdotL, vec3 normal, vec3 lightDir, vec3 ViewDi
     Rs = (fresnel * Rough * geometric) / (  NdotL * NdotV);
 	return Rs; 
 }
+float intensityShadow(vec3 Normal, vec3 LightDir, vec4 FragPosLightSpace)
+{
+    vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5; 
+    float closestDepth = texture(shadowMap, projCoords.xy).r;   
+    float currentDepth = projCoords.z;  
+    float bias = max(0.05 * (1.0 - dot(normalize(Normal), LightDir)), 0.005);  
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    if(projCoords.z > 1.0)
+        shadow = 0.0;
+    shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= 9.0;
+    return shadow;
+}
+
 
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 {
@@ -105,8 +131,9 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
     * NdotL * Rs;
     // * NdotL * (f0 + Rs * (1.0 - f0));
 
+    float shadow = intensityShadow(Normal, LightDir, FragPosLightSpace);
 
-    return ambient + diffuse + specular;
+    return (ambient + (1.0 - shadow) * (diffuse + specular));
 }
 
 vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 diffuseColorK)
