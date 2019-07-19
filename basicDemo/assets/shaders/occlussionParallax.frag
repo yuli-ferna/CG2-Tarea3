@@ -88,7 +88,7 @@ float intensityShadow(vec3 Normal, vec3 LightDir, vec4 FragPosLightSpace)
 }
 vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 {
-    vec3 LightDir = normalize(-lightDir); // Solo usamos la entrada del tweakbar
+    vec3 LightDir = normalize(TBN*-lightDir); // Solo usamos la entrada del tweakbar
     vec3 reflectDir = reflect(-LightDir, Normal);
     vec3 halfwayDir = normalize(LightDir + ViewDir);
     //Material with lightDir components
@@ -106,7 +106,7 @@ vec3 intensiyLightDir(vec3 Normal, vec3 ViewDir, vec3 diffuseColorK)
 vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 diffuseColorK)
 {
 
-    vec3 lightDir = normalize(pointLight.position - fragPos);
+    vec3 lightDir = normalize(TBN * pointLight.position - TangentFragPos.xyz);
     vec3 R = reflect(-lightDir, normal);
     vec3 halfwayDir = normalize(lightDir + ViewDir);
     
@@ -116,7 +116,7 @@ vec3 intensityPointLight(PointLight pointLight, vec3 normal, vec3 ViewDir, vec3 
     vec3 diffuse  = diffuseColorK * pointLight.diffuseColor * max(0.0, dot(normal, lightDir));
     vec3 specular = ks * pointLight.specularColor * pow(max(0.0, dot(R, halfwayDir)), n);
     
-    float dist = length(pointLight.position - fragPos);
+    float dist = length(TBN * pointLight.position - TangentFragPos.xyz);
     float attenuation = 1.0f / (pointLight.attenuationK.x 
         + pointLight.attenuationK.y * dist
         + pointLight.attenuationK.z * (dist * dist));
@@ -206,9 +206,9 @@ vec2 OcclussionParallaxMapping(vec2 texCoords, vec3 viewDir)
 { 
     const float minLayers = 8;
     const float maxLayers = 32;
-    // number of depth layers
+    // numero de profundidad de capas
     float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0,0.0,1.0), viewDir)));
-    // calculate the size of each layer
+    // calculamos el tamaño por capa
     float layerDepth = 1.0 / numLayers;
     // depth of current layer
     float currentLayerDepth = 0.0;

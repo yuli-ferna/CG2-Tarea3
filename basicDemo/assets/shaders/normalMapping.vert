@@ -60,6 +60,6 @@ void main()
     out_.pointLightPosTang[1] = out_.TBN * pointLight[1];
     out_.viewPosTang = out_.TBN * viewPos;
     out_.texCoord = vertexTextureCoord;
-    out_.fragPos = out_.fragPos;
+
     gl_Position = Proj * View * (vec4( out_.fragPos, 1.0f));
 }
