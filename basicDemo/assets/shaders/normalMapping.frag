@@ -1,13 +1,13 @@
 #version 330 core
 // Vertex color (interpolated/fragment)
 in OUT_ {
-    vec3 Normal;
-    vec3 fragPos;
     vec2 texCoord;
+    vec4 FragPosLightSpace;
+    vec3 Normal;
     vec3 Tangent;
     vec3 Bitangent;
+    vec3 fragPos;
     mat3 TBN;
-    vec4 FragPosLightSpace;
     vec3 viewPosTang;
     vec3 pointLightPosTang[2];
     vec3 spotLightPosTang;
@@ -180,7 +180,7 @@ void main()
     {
         result = intensitySpotLight(SpotLight, normal, ViewDir, kd);
         result += intensityPointLight(pointLights[0], in_.pointLightPosTang[0], normal, ViewDir, kd);
-        result += intensityPointLight(pointLights[1],in_.pointLightPosTang[1], normal, ViewDir, kd);
+        result += intensityPointLight(pointLights[1], in_.pointLightPosTang[1], normal, ViewDir, kd);
         result += intensiyLightDir(normal,ViewDir, kd);
     
     }else {
@@ -195,8 +195,8 @@ void main()
     //pruebas
     color = vec4((normal), 1.0f);
     color = vec4(normalize(in_.Normal), 1.0f);
-    color = vec4((in_.Tangent), 1.0f);
     //Resultado
+    color = vec4(normalize(in_.Tangent), 1.0f);
     color = vec4(result, 1.0f);
     
     //Texture

@@ -168,8 +168,8 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 	if (Camara->getCameraMode()) {
 
 		glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
-		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse;
-		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse;
+		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse * deltaTime;
+		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse * deltaTime;
 		Camara->updateInputMouse(xoffset, yoffset);
 
 		/*yaw += xoffset;
@@ -684,28 +684,28 @@ void initTexture() {
 	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
 	unsigned int dispMap1 = loadTexture("assets/textures/toy_box_disp.png");
 	blend = loadTexture("assets/textures/blending_transparent_window.png");
+	specularMap = loadTexture("assets/textures/container2_specular.png");
 
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	specularMap = loadTexture("assets/textures/container2_specular.png");
+	textures.push_back(textureID1);
 	std::vector<unsigned int> normal
 	{
-		normalMap, normalMap, normalMap, normalMap,
-		normalMap, normalMap1, normalMap1, normalMap1,
-		normalMap1
+		normalMap, normalMap, normalMap, normalMap1,
+		normalMap1, normalMap1, normalMap, normalMap,
+		normalMap
 	};
 	std::vector<unsigned int> disp
 	{
-		dispMap, dispMap, dispMap, dispMap,
-		dispMap, dispMap1, dispMap1, dispMap1,
-		dispMap1
+		dispMap, dispMap, dispMap, dispMap1,
+		dispMap1, dispMap1, dispMap, dispMap,
+		dispMap
 	};
 	for (int i = 0; i < modelsObj.size(); i++)
 	{
@@ -713,7 +713,6 @@ void initTexture() {
 		modelsObj[i]->texture.normal = normal[i];
 		modelsObj[i]->texture.disp = disp[i];
 		modelsObj[i]->texture.blend = blend;
-
 	}
 	
 	//Load skybox
