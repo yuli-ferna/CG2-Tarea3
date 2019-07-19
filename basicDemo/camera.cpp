@@ -18,7 +18,7 @@ camera::camera()
 	cameraMode = false;
 	speed = 5.5f;
 	speedMouse = 0.05f;
-	position = glm::vec3(0.0f, 0.5f, 3.0f);
+	position = glm::vec3(0.0f, 0.5f, 17.0f);
 	front = glm::vec3(0.0f, 0.0f, -1.0f);
 	up = glm::vec3(0.0f, 1.0f, 0.0f);
 	yaw = 0;

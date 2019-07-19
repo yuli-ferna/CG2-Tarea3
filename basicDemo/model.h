@@ -38,8 +38,11 @@ public:
 	//Textures 
 	struct Texture
 	{
-		unsigned int diffuse;
-		unsigned int specular;
+		unsigned int diffuse = 1;
+		unsigned int specular = 1;
+		unsigned int normal = 1;
+		unsigned int disp = 1;
+		unsigned int blend = 1;
 	};
 	Texture texture;
 	model();

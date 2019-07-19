@@ -488,9 +488,9 @@ void buildGeometry()
 	std::vector < glm::vec3 > pos;
 
 	//Positions
-	pos.push_back(glm::vec3(0.0f));
-	pos.push_back(glm::vec3(4.0f, 0.0f, 0.0f));
-	pos.push_back(glm::vec3(-4.0f, 0.0f, 0.0f));
+	pos.push_back(glm::vec3(0.0f, 2.0f, 0.0f));
+	pos.push_back(glm::vec3(4.0f, 2.0f, 0.0f));
+	pos.push_back(glm::vec3(-4.0f, 2.0f, 0.0f));
 	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
 	buildModel(".\\assets\\models\\sphere1.obj", pos, modelsObj);
 	pos.clear();
@@ -501,16 +501,16 @@ void buildGeometry()
 	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
 	buildModel(".\\assets\\models\\cube1.obj", pos, modelsObj);
 	pos.clear();
-	pos.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+	pos.push_back(glm::vec3(2.5f, 0.0f, 0.0f));
 	pos.push_back(glm::vec3(0.0f, 0.0f, 2.0f));
-	pos.push_back(glm::vec3(0.0f, 0.0f, 4.0f));
+	pos.push_back(glm::vec3(-2.5f, 0.0f, 4.0f));
 	buildModel(".\\assets\\models\\window.obj", pos, transparentObj);
 	//Paths
 	/*paths.push_back(".\\assets\\models\\plane.obj");
 	paths.push_back(".\\assets\\models\\cube2.obj");*/
 	pos.clear();
 	pos.push_back(glm::vec3(0.0f));
-	buildModel(".\\assets\\models\\plane.obj", pos, modelsObj);
+	buildModel(".\\assets\\models\\planeS.obj", pos, modelsObj);
 	pos.clear();/*
 	pos.push_back(glm::vec3(6.0f)); 
 	buildModel(".\\assets\\models\\cube2.obj", pos, modelsObj);*/
@@ -676,13 +676,13 @@ unsigned int loadCubemap(std::vector<std::string> faces)
 void initTexture() {
 
 	textureID1 = loadTexture("assets/textures/bricks2.jpg");
-	textures.push_back(textureID1);
-	textureID = loadTexture("assets/textures/bricks2.jpg");
-	textures.push_back(textureID1);
-	textureID1 = loadTexture("assets/textures/container2.png");
-	textureID1 = loadTexture("assets/textures/bricks2.jpg");
+	textureID = loadTexture("assets/textures/wood.png");
+	//textureID1 = loadTexture("assets/textures/container2.png");
+	//textureID1 = loadTexture("assets/textures/bricks2.jpg");
 	normalMap = loadTexture("assets/textures/bricks2_normal.jpg");
+	unsigned int normalMap1 = loadTexture("assets/textures/toy_box_normal.png");
 	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
+	unsigned int dispMap1 = loadTexture("assets/textures/toy_box_disp.png");
 	blend = loadTexture("assets/textures/blending_transparent_window.png");
 
 	textures.push_back(textureID1);
@@ -690,9 +690,32 @@ void initTexture() {
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
+	textures.push_back(textureID);
 	specularMap = loadTexture("assets/textures/container2_specular.png");
+	std::vector<unsigned int> normal
+	{
+		normalMap, normalMap, normalMap, normalMap,
+		normalMap, normalMap1, normalMap1, normalMap1,
+		normalMap1
+	};
+	std::vector<unsigned int> disp
+	{
+		dispMap, dispMap, dispMap, dispMap,
+		dispMap, dispMap1, dispMap1, dispMap1,
+		dispMap1
+	};
+	for (int i = 0; i < modelsObj.size(); i++)
+	{
+		modelsObj[i]->texture.diffuse = textures[i];
+		modelsObj[i]->texture.normal = normal[i];
+		modelsObj[i]->texture.disp = disp[i];
+		modelsObj[i]->texture.blend = blend;
+
+	}
+	
 	//Load skybox
 	std::vector<std::string> faces
 	{
@@ -970,21 +993,21 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	shaderActual->setInt("shadowMap", depthMap - 1);
 
-	glActiveTexture(GL_TEXTURE0 + textures[i] - 1);
-	glBindTexture(GL_TEXTURE_2D, textures[i]);
-	shaderActual->setInt("text", textures[i] - 1);
+	glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.diffuse - 1);
+	glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.diffuse);
+	shaderActual->setInt("text", modelsObj[i]->texture.diffuse - 1);
 
-	glActiveTexture(GL_TEXTURE0 + specularMap - 1);
-	glBindTexture(GL_TEXTURE_2D, specularMap);
-	shaderActual->setInt("specMap", specularMap - 1);
+	glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.specular - 1);
+	glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.specular);
+	shaderActual->setInt("specMap", modelsObj[i]->texture.specular - 1);
 
-	glActiveTexture(GL_TEXTURE0 + normalMap - 1);
-	glBindTexture(GL_TEXTURE_2D, normalMap);
-	shaderActual->setInt("normalMap", normalMap - 1);
+	glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.normal - 1);
+	glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.normal);
+	shaderActual->setInt("normalMap", modelsObj[i]->texture.normal - 1);
 
-	glActiveTexture(GL_TEXTURE0 + dispMap - 1);
-	glBindTexture(GL_TEXTURE_2D, dispMap);
-	shaderActual->setInt("dispMap", dispMap - 1);
+	glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.disp - 1);
+	glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.disp);
+	shaderActual->setInt("dispMap", modelsObj[i]->texture.disp - 1);
 
 	// Binds the vertex array to be drawn
 	glBindVertexArray(arrayObj[i]->VAO[0]);
