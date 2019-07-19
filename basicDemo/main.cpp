@@ -719,12 +719,12 @@ void initTexture() {
 	//Load skybox
 	std::vector<std::string> faces
 	{
-		"assets/textures/right.jpg",
-		"assets/textures/left.jpg",
-		"assets/textures/top.jpg",
-		"assets/textures/bottom.jpg",
-		"assets/textures/front.jpg",
-		"assets/textures/back.jpg"
+		"assets/textures/skybox/right.bmp",
+		"assets/textures/skybox/left.bmp",
+		"assets/textures/skybox/top.bmp",
+		"assets/textures/skybox/bottom.bmp",
+		"assets/textures/skybox/front.bmp",
+		"assets/textures/skybox/back.bmp"
 	};
 	cubemapTexture = loadCubemap(faces);
 	//textures.push_back(cubemapTexture);
