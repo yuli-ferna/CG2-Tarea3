@@ -14,6 +14,8 @@ float LinearizeDepth(float depth)
 void main()
 {             
     float depthValue = texture(depthMap, textCoord).r;
+    if(texture(depthMap, textCoord).a < 0.1)
+        discard;
     color = vec4(vec3(LinearizeDepth(depthValue) / 80.5f), 1.0); // perspective
     color = vec4(vec3(depthValue), 1.0); // orthographic
 }

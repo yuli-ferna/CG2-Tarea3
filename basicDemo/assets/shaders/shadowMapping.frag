@@ -66,7 +66,7 @@ float intensityShadow(vec3 Normal, vec3 LightDir, vec4 FragPosLightSpace)
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     if(projCoords.z > 1.0)
         shadow = 0.0;
-    shadow = 0.0;
+    // shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     for(int x = -1; x <= 1; ++x)
     {

@@ -326,6 +326,7 @@ void initMVP()
 
 void buildModel(std::string path, std::vector< glm::vec3 > position, std::vector< model* >& arrayObj)
 {
+	std::vector< glm::vec3 > allVert;
 	std::vector< glm::vec3 > Vert;
 	std::vector< glm::vec3 > Normal;
 	std::vector< glm::vec3 > Tangent;
@@ -335,7 +336,7 @@ void buildModel(std::string path, std::vector< glm::vec3 > position, std::vector
 
 	model* obj = new model(position[0]);
 	obj->loadObj(path, Vert, Normal, UV);
-	obj->getTangentBitanget(Vert, UV, Normal, Tangent, Bitangent);
+	obj->getTangentBitanget(Vert, UV, Normal, Tangent, Bitangent, allVert);
 
 	//int nMod = 3;
 	//Load 3 models
@@ -591,24 +592,29 @@ unsigned int loadTexture(const char* path)
 	if (data)
 	{
 		// Gets the texture channel format
-		GLenum format;
+		GLenum format1;
+		GLenum format2;
 		switch (numberOfChannels)
 		{
 		case 1:
-			format = GL_RED;
+			format1 = GL_RED;
+			format2 = GL_RED;
 			break;
 		case 3:
-			format = GL_RGB;
+			format1 = GL_SRGB;
+			format2 = GL_RGB;
 			break;
 		case 4:
-			format = GL_RGBA;
+			format1 = GL_SRGB_ALPHA;
+			format2 = GL_RGBA;
 			break;
+
 		}
 
 		// Binds the texture
 		glBindTexture(GL_TEXTURE_2D, id);
 		// Creates the texture
-		glTexImage2D(GL_TEXTURE_2D, 0, format, textureWidth, textureHeight, 0, format, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, format1, textureWidth, textureHeight, 0, format2, GL_UNSIGNED_BYTE, data);
 		// Creates the texture mipmaps
 		glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -689,7 +695,7 @@ void initTexture() {
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
 	textures.push_back(textureID1);
-	textures.push_back(textureID);
+	textures.push_back(textureID1);
 	textures.push_back(textureID);
 	textures.push_back(textureID);
 	textures.push_back(textureID1);
@@ -697,13 +703,13 @@ void initTexture() {
 	textures.push_back(textureID1);
 	std::vector<unsigned int> normal
 	{
-		normalMap, normalMap, normalMap, normalMap1,
+		normalMap, normalMap, normalMap, normalMap,
 		normalMap1, normalMap1, normalMap, normalMap,
 		normalMap
 	};
 	std::vector<unsigned int> disp
 	{
-		dispMap, dispMap, dispMap, dispMap1,
+		dispMap, dispMap, dispMap, dispMap,
 		dispMap1, dispMap1, dispMap, dispMap,
 		dispMap
 	};
@@ -1114,9 +1120,9 @@ void drawSkybox()
 
 void updateLightSpaceMatrix()
 {
-	float near_plane = 1.0f, far_plane = 80.5f;
+	float near_plane = 0.01f, far_plane = 90.5f;
 	lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
-	glm::vec3 lightPosition = directionalLight->getLightDir() * -1.5f;
+	glm::vec3 lightPosition = directionalLight->getLightDir() * -1.0f;
 	lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 	lightSpaceMatrix = lightProjection * lightView;
 }
@@ -1236,6 +1242,9 @@ void renderLightView()
 		updateMVP(i, modelsObj[i]->getPosition());
 		shaderdephtMap->setMat4("model", Model);
 		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.diffuse - 1);
+		glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.diffuse);
+		shaderdephtMap->setInt("text", modelsObj[i]->texture.diffuse - 1);
 		glBindVertexArray(modelsObj[i]->VAO[0]);
 		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
 		glBindVertexArray(0);
@@ -1247,6 +1256,9 @@ void renderLightView()
 		updateMVP(i, transparentObj[i]->getPosition());
 		shaderdephtMap->setMat4("model", Model);
 		shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		glActiveTexture(GL_TEXTURE0 + blend - 1);
+		glBindTexture(GL_TEXTURE_2D, blend);
+		shaderdephtMap->setInt("text", blend-1);
 
 		glBindVertexArray(transparentObj[i]->VAO[0]);
 		glDrawArrays(GL_TRIANGLES, 0, transparentObj[i]->numVertex);

@@ -47,7 +47,7 @@ bool model::loadObj(std::string path, std::vector<glm::vec3>& vert, std::vector<
 		return false;
 	}
 
-	std::vector< glm::vec3 > allVert;
+	//std::vector< glm::vec3 > allVert;
 	std::vector< glm::vec3 > allNormal;
 	std::vector< glm::vec2 > allUV;
 	std::vector< unsigned int > vertInd, normInd, uvInd;
@@ -145,9 +145,11 @@ model* model::loadObj(std::string path, glm::vec3 position)
 		std::cout << "No se ecuentra: " << path << std::endl;
 	}
 
-	std::vector< glm::vec3 > allVert;
+	//std::vector< glm::vec3 > allVert;
 	std::vector< glm::vec3 > allNormal;
 	std::vector< glm::vec2 > allUV;
+	model* a = new model(position);
+
 	std::vector< unsigned int > vertInd, normInd, uvInd;
 	//int count = 0;
 	while (file) {
@@ -161,7 +163,7 @@ model* model::loadObj(std::string path, glm::vec3 position)
 		if (first == "v")
 		{
 			str >> vx >> vy >> vz;
-			allVert.push_back(glm::vec3(vx, vy, vz));
+			a->allVert.push_back(glm::vec3(vx, vy, vz));
 
 		}
 		//Coordenadas uv
@@ -220,17 +222,16 @@ model* model::loadObj(std::string path, glm::vec3 position)
 	}
 	std::cout << "Sale de leer archivo " << std::endl;
 
-	model *a = new model(position);
 	//Creando el arreglo final
 	for (int i = 0; i < vertInd.size(); i++)
 	{
-		a->vertex.push_back(glm::vec3(allVert[vertInd[i]]));
+		a->vertex.push_back(glm::vec3(a->allVert[vertInd[i]]));
 		a->uv.push_back(allUV[uvInd[i]]);
 		a->normal.push_back(glm::vec3(allNormal[normInd[i]]));
 	}
 	a->numVertex = a->vertex.size();
 	std::cout << "Sale de llenar características" << path << std::endl;
-	getTangentBitanget(a->vertex, a->uv, a->normal, a->tangent, a->bitangent);
+	getTangentBitanget(a->vertex, a->uv, a->normal, a->tangent, a->bitangent, a->allVert);
 	std::cout << "Sale de calculas tangente" << path << std::endl;
 	return a;
 
@@ -290,8 +291,14 @@ void model::loadMTL(std::string path)
 	}
 }
 
-void model::getTangentBitanget(std::vector<glm::vec3>& vertices, std::vector<glm::vec2>& uvs, std::vector<glm::vec3>& normals, std::vector<glm::vec3>& tangents, std::vector<glm::vec3>& bitangents)
+void model::getTangentBitanget(std::vector<glm::vec3>& vertices, std::vector<glm::vec2>& uvs, std::vector<glm::vec3>& normals, std::vector<glm::vec3>& tangents, std::vector<glm::vec3>& bitangents, std::vector<glm::vec3>& allVert)
 {
+	/*int numAllVert = allVert.size();
+	
+	std::vector<std::pair <int, double>> tangentProm(numAllVert);
+	tangentProm[0] = std::make_pair(1, 0.99);
+	tangentProm[4] = std::make_pair(1, 0.99);
+	tangentProm[1] = std::make_pair(1, 0.99);*/
 	for (size_t ii = 0; ii < vertices.size(); ii += 3)
 	{
 		glm::vec3 v0 = vertices[ii + 0];

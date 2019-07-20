@@ -14,7 +14,7 @@ class model
 
 public:
 	//string name;
-	std::vector<glm::vec3> vertex, normal, color, tangent, bitangent;
+	std::vector<glm::vec3> vertex, normal, color, tangent, bitangent, allVert;
 	std::vector<glm::vec2> uv;
 	int numVertex;
 	// Index (GPU) of the geometry buffer
@@ -54,16 +54,9 @@ public:
 	void loadMTL(std::string path);
 
 	//tangents and bitangents
-	void getTangentBitanget(
-		// inputs
-		std::vector<glm::vec3>& vertices,
-		std::vector<glm::vec2>& uvs,
-		std::vector<glm::vec3>& normals,
-		// outputs
-		std::vector<glm::vec3>& tangents,
-		std::vector<glm::vec3>& bitangents
-	);
+	void getTangentBitanget(std::vector<glm::vec3>& vertices, std::vector<glm::vec2>& uvs, std::vector<glm::vec3>& normals, std::vector<glm::vec3>& tangents, std::vector<glm::vec3>& bitangents, std::vector<glm::vec3>& allVert);
 
+	
 	Texture getTexture();
 	void setTexture(unsigned int diffID);
 	void setTexture(unsigned int diffID, unsigned int specID);
