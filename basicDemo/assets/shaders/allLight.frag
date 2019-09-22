@@ -153,6 +153,7 @@ void main()
             discard;
     }
     color = vec4(result, 1.0f);
+    color = vec4(1.0f);
     
     //Texture
     // color = color /* texture2D(text, texCoord).rgb*/;

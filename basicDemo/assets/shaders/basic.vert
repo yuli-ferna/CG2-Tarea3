@@ -1,20 +1,17 @@
+  
 #version 330 core
-// Atributte 0 of the vertex
-layout (location = 0) in vec3 vertexPosition;
-// Atributte 1 of the vertex
-layout (location = 1) in vec2 vertexTextureCoord;
-// Atributte 2 of the vertex
-layout (location = 2) in vec3 vertexNormal;
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
 
 //Uniforms MVP matrix
-uniform mat4 MVP;
+uniform mat4 Model;
+uniform mat4 View;
+uniform mat4 Proj;
 
-out vec4 vColor;
-out vec2 texCoord;
+out vec3 ourColor;
 
 void main()
 {
-    vColor = vec4(vertexNormal, 1.0f);
-    texCoord = vertexTextureCoord;
-    gl_Position = MVP * (vec4(vertexPosition, 1.0f));
+    gl_Position = Proj * View * Model * vec4(aPos, 1.0);
+    ourColor = aColor;
 }
