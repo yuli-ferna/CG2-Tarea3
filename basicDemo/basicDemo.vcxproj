@@ -131,22 +131,16 @@
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="glad.c" />
-    <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
-    <ClCompile Include="pointLight.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="spotLight.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="userInterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
-    <ClInclude Include="light.h" />
     <ClInclude Include="model.h" />
-    <ClInclude Include="pointLight.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="spotLight.h" />
     <ClInclude Include="userInterface.h" />
   </ItemGroup>
   <ItemGroup>

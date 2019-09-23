@@ -17,9 +17,6 @@
 #include "userInterface.h"
 #include "model.h"
 #include "camera.h"
-#include "light.h"
-#include "pointLight.h"
-#include "spotLight.h"
 
 #include "Shader.h"
 #include <vector>
@@ -57,21 +54,10 @@ float speedMouse = Camara->getSpeedMouse();
 float currentTime, deltaTime;
 float lastTime = glfwGetTime();
 
-//Lights
-enum modeLight { dir, point };
-modeLight mode = dir;
-light* directionalLight = new light(glm::vec3(0.0f, 5.0f, 5.0f));
-std::vector < pointLight* > PointLight;
-spotLight* SpotLight = new spotLight(Camara->getPosition());
-
-//tweakBar
-userInterface* Interface;
 
 //Models
 model* object;
-std::vector< model* > modelsObj, lightsObj, transparentObj;
-int lightAnt, modelAnt;
-std::map<float, int> sorted;
+std::vector< model* > modelsObj;
 
 //Framebuffer
 //Transformar al espacio de luz
@@ -96,7 +82,6 @@ void resize(GLFWwindow* window, int width, int height)
 	windowHeight = height;
 	// Sets the OpenGL viewport size and position
 	glViewport(0, 0, windowWidth, windowHeight);
-	Interface->reshape();
 
 }
 
@@ -135,11 +120,9 @@ void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods)
 			if (!Camara->getCameraMode())
 			{
 				//cameraMode = true;
-				Interface->hide();
 			}
 			else {
 				//cameraMode = false;
-				Interface->show();
 
 			}
 			Camara->changeCameraMode();
@@ -182,44 +165,7 @@ void onCharacter(GLFWwindow* window, unsigned int codepoint) {
 void initUserInterfaceValues()
 {
 	//Model
-	Interface->nModel = 0;
-	Interface->lightView = false;
-	modelAnt = 0;
-	Interface->shinniness = modelsObj[0]->getShinniness();
-	Interface->indexMaterial = modelsObj[0]->getindexMaterial();
-	Interface->intensityParalax = modelsObj[0]->getintensityParalax();
-	Interface->indexAmbient = modelsObj[0]->getindexAmbient();
-	Interface->percentAmbient = modelsObj[0]->getpercentAmbient();
-	Interface->roughness = modelsObj[0]->getRoughness();
-	Interface->albedo = modelsObj[0]->getAlbedo();
-	Interface->ambientColorMtl = modelsObj[0]->getKAmbient();
-	Interface->diffuseColorMtl = modelsObj[0]->getKDiffuse();
-	Interface->specularColorMtl = modelsObj[0]->getKSpecular();
-	//Light direction
-	Interface->lightDir = (directionalLight->getLightDir());
-	Interface->ambientColor = directionalLight->getAmbientColor();
-	Interface->diffuseColor = directionalLight->getDiffuseColor();
-	Interface->specularColor = directionalLight->getSpecularColor();
-	Interface->onLightDir = directionalLight->getONOFF();
-	// Point Light
-	Interface->nPointLight = 0;
-	lightAnt = 0;
-	Interface->onLightPoint = PointLight[0]->getONOFF();
-	Interface->ambientColorPoint = PointLight[0]->getAmbientColor();
-	Interface->diffuseColorPoint = PointLight[0]->getDiffuseColor();
-	Interface->specularColorPoint = PointLight[0]->getSpecularColor();
-	Interface->lightPointPos = PointLight[0]->getLightPos();
-	Interface->lightAttPoint = PointLight[0]->getKAttenuation();
-
-	//Spot Light
-	Interface->onLightSpot = SpotLight->getONOFF();
-	Interface->ambientColorSpot = SpotLight->getAmbientColor();
-	Interface->diffuseColorSpot = SpotLight->getDiffuseColor();
-	Interface->specularColorSpot = SpotLight->getSpecularColor();
-	Interface->lightAttSpot = SpotLight->getKAttenuation();
-	Interface->cuttof = SpotLight->getCuttof();
-	Interface->outerCuttof = SpotLight->getOuterCuttof();
-
+	
 }
 /**
  * initialize the user interface
@@ -230,7 +176,7 @@ bool initUserInterface()
 	if (!TwInit(TW_OPENGL_CORE, NULL))
 		return false;
 
-	Interface = new userInterface();
+	//Interface = new userInterface();
 	TwWindowSize(windowHeight, windowHeight);
 	//initUserInterfaceValues();
 	return true;
@@ -524,17 +470,6 @@ unsigned int loadTexture(const char* path)
 	return id;
 }
 
-void initLights()
-{
-	pointLight* light1 = new pointLight(glm::vec3(0.0f, 0.0f, 0.0f));
-	light1->setDiffuseColor(glm::vec3(0.2f));
-	pointLight* light2 = new pointLight(glm::vec3(2.0f, 0.0f, -2.0f));
-	light2->setDiffuseColor(glm::vec3(0.2f));
-
-	PointLight.push_back(light1);
-	PointLight.push_back(light2);
-}
-
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
 	unsigned int textureID;
@@ -682,9 +617,7 @@ bool init()
 	//Initializate MVP values
 	initMVP();
 
-	//Initializate lights
-	initLights();
-
+	
 	//Init values of tweakbar
 	initUserInterfaceValues();
 
@@ -727,9 +660,6 @@ void processKeyboardInput(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		Camara->updateInputKeyboard('d');
-
-	if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-		directionalLight->changeONOFF();
 
 }
 
@@ -822,116 +752,10 @@ void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
 void updateUserInterface()
 {
 	//Model
-	int nMod = Interface->nModel;
-	if (nMod >= modelsObj.size()) nMod = modelsObj.size() - 1;
-	if (modelAnt != nMod)
-	{
-		//Nueva selección 
-		//(actualizamos tweakbar con los atributos del modelo seleccionado)
-		Interface->ambientColorMtl = modelsObj[nMod]->getKAmbient();
-		Interface->diffuseColorMtl = modelsObj[nMod]->getKDiffuse();
-		Interface->specularColorMtl = modelsObj[nMod]->getKSpecular();
-		Interface->shinniness = modelsObj[nMod]->getShinniness();
-		Interface->roughness = modelsObj[nMod]->getRoughness();
-		Interface->albedo = modelsObj[nMod]->getAlbedo();
-		Interface->setShader(modelsObj[nMod]->getShader());
-		Interface->indexAmbient = modelsObj[nMod]->getindexAmbient();
-		Interface->indexMaterial = modelsObj[nMod]->getindexMaterial();
-		Interface->percentAmbient = modelsObj[nMod]->getpercentAmbient();
-		Interface->intensityParalax = modelsObj[nMod]->getintensityParalax();
-
-		modelAnt = nMod;
-	}
-	modelsObj[nMod]->setKAmbient(Interface->ambientColorMtl);
-	modelsObj[nMod]->setKDiffuse(Interface->diffuseColorMtl);
-	modelsObj[nMod]->setKSpecular(Interface->specularColorMtl);
-	modelsObj[nMod]->setShinniness(Interface->shinniness);
-	modelsObj[nMod]->setRoghness(Interface->roughness);
-	modelsObj[nMod]->setindexMaterial(Interface->indexMaterial);
-	modelsObj[nMod]->setindexAmbient(Interface->indexAmbient);
-	modelsObj[nMod]->setpercentAmbient(Interface->percentAmbient);
-	modelsObj[nMod]->setintensityParalax(Interface->intensityParalax);
-
-	modelsObj[nMod]->setAlbedo(Interface->albedo);
-	modelsObj[nMod]->setShader(Interface->getShader());
-
-	//Light dir
-	directionalLight->setLightDir(Interface->direction);
-	directionalLight->setAmbientColor(Interface->ambientColor);
-	directionalLight->setDiffuseColor(Interface->diffuseColor);
-	directionalLight->setSpecularColor(Interface->specularColor);
-	directionalLight->setONOFF(Interface->onLightDir);
-
-	//Point lights
-	int nLight = Interface->nPointLight;
-
-	if (lightAnt != nLight)
-	{
-		Interface->onLightPoint = PointLight[nLight]->getONOFF();
-		Interface->ambientColorPoint = PointLight[nLight]->getAmbientColor();
-		Interface->diffuseColorPoint = PointLight[nLight]->getDiffuseColor();
-		Interface->specularColorPoint = PointLight[nLight]->getSpecularColor();
-		Interface->lightPointPos = PointLight[nLight]->getLightPos();
-		Interface->lightAttPoint = PointLight[nLight]->k;
-		lightAnt = nLight;
-	}
-
-	PointLight[nLight]->setLightPos(Interface->lightPointPos);
-	PointLight[nLight]->setONOFF(Interface->onLightPoint);
-	PointLight[nLight]->setAmbientColor(Interface->ambientColorPoint);
-	PointLight[nLight]->setDiffuseColor(Interface->diffuseColorPoint);
-	PointLight[nLight]->setSpecularColor(Interface->specularColorPoint);
-	PointLight[nLight]->setKAttenuation(Interface->lightAttPoint);
-
-	//Spot Light;
-	SpotLight->setAmbientColor(Interface->ambientColorSpot);
-	SpotLight->setDiffuseColor(Interface->diffuseColorSpot);
-	SpotLight->setSpecularColor(Interface->specularColorSpot);
-	SpotLight->setCuttof(Interface->cuttof);
-	SpotLight->setOuterCuttof(Interface->outerCuttof);
-	SpotLight->setONOFF(Interface->onLightSpot);
-	SpotLight->setKAttenuation(Interface->lightAttSpot);
-
-}
-
-void updateLightSpaceMatrix()
-{
-	float near_plane = 0.01f, far_plane = 90.5f;
-	lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, near_plane, far_plane);
-	glm::vec3 lightPosition = directionalLight->getLightDir() * -1.0f;
-	lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-	lightSpaceMatrix = lightProjection * lightView;
 }
 
 void renderModels()
 {
-	updateLightSpaceMatrix();
-	for (size_t i = 0; i < modelsObj.size(); i++)
-	{
-
-		char shad = modelsObj[i]->getShader();
-		renderObj(shader, i, modelsObj);
-		
-	}
-	for (unsigned int i = 0; i < transparentObj.size(); i++)
-	{
-		float distance = glm::length(Camara->getPosition() - transparentObj[i]->getPosition());
-		sorted[distance] = i;
-	}
-	//Draw semitransparent objects
-/*
-	for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
-	{
-		renderObj(shadersemiTransparent, it->second, transparentObj);
-		glActiveTexture(GL_TEXTURE0 + blend - 1);
-		glBindTexture(GL_TEXTURE_2D, blend);
-		shadersemiTransparent->setInt("blend", blend - 1);
-	}*/
-	//Lights
-	//drawLights();
-
-	//Skybox
-	//drawSkybox();
 }
 
 void renderQuad()
@@ -960,57 +784,6 @@ void renderQuad()
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
-}
-
-/*
-* Escena desde el punto de vista de la luz para shadow mapping
-*/
-void renderLightView()
-{
-	/*prepare framebuffer*/
-	//shaderdephtMap->use();
-	updateLightSpaceMatrix();
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	//depth mapp
-	for (size_t i = 0; i < modelsObj.size(); i++)
-	{
-		//shaderdephtMap->use();
-		updateMVP(i, modelsObj[i]->getPosition());
-		//shaderdephtMap->setMat4("model", Model);
-		//shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		glActiveTexture(GL_TEXTURE0 + modelsObj[i]->texture.diffuse - 1);
-		glBindTexture(GL_TEXTURE_2D, modelsObj[i]->texture.diffuse);
-		//shaderdephtMap->setInt("text", modelsObj[i]->texture.diffuse - 1);
-		glBindVertexArray(modelsObj[i]->VAO[0]);
-		glDrawArrays(GL_TRIANGLES, 0, modelsObj[i]->numVertex);
-		glBindVertexArray(0);
-	}
-
-	for (size_t i = 0; i < transparentObj.size(); i++)
-	{
-		//shaderdephtMap->use();
-		updateMVP(i, transparentObj[i]->getPosition());
-		//shaderdephtMap->setMat4("model", Model);
-		//shaderdephtMap->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		glActiveTexture(GL_TEXTURE0 + blend - 1);
-		glBindTexture(GL_TEXTURE_2D, blend);
-		//shaderdephtMap->setInt("text", blend - 1);
-
-		glBindVertexArray(transparentObj[i]->VAO[0]);
-		glDrawArrays(GL_TRIANGLES, 0, transparentObj[i]->numVertex);
-		glBindVertexArray(0);
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// reset viewport
-	glViewport(0, 0, windowWidth, windowHeight);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-
 }
 /**
  * Render Function
@@ -1130,10 +903,7 @@ int main(int argc, char const* argv[])
 	//delete shaderDirLight;
 	//delete shaderPointLight;
 	delete Camara;
-	delete SpotLight;
-	delete directionalLight;
 	delete object;
-	delete Interface;
 	TwTerminate();
 	// Stops the glfw program
 	glfwTerminate();
