@@ -1,5 +1,4 @@
-﻿#define N_POINTLIGHTS 2
-#define NVBOS 5
+﻿#define NVBOS 5
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -17,6 +16,7 @@
 #include "userInterface.h"
 #include "model.h"
 #include "camera.h"
+#include "volume.h"
 
 #include "Shader.h"
 #include <vector>
@@ -36,9 +36,7 @@ Shader* shader, * shaderAllLight;
 
 //Textures
 unsigned int textureID;
-unsigned int textureID1, specularMap, normalMap, dispMap, blend, depthMap;
-unsigned int cubemapTexture;
-std::vector<unsigned int> textures;
+unsigned int depthMap;
 
 //skybox
 unsigned int planeVAO, planeVBO;
@@ -58,6 +56,10 @@ float lastTime = glfwGetTime();
 //Models
 model* object;
 std::vector< model* > modelsObj;
+
+//Volume
+const char* path = ".\assets\models\bonsai_256x256x256_uint8.raw";
+volume* volumeObj = new volume(path);
 
 //Framebuffer
 //Transformar al espacio de luz
@@ -98,13 +100,8 @@ void onResizeWindow(GLFWwindow* window, int width, int height) {
 /**
  * Calback key press
  * */
-void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	/*if (action == GLFW_PRESS)
-	{
-		TwKeyPressed(key, TW_KMOD_NONE);
-		return;
-	}*/
-	//Important!
+void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods) 
+{
 	if (TwEventKeyGLFW(key, action))
 		return;
 
@@ -157,7 +154,8 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 		std::cout << "main:\n" << yaw << ' ' << pitch << std::endl;*/
 	}
 }
-void onCharacter(GLFWwindow* window, unsigned int codepoint) {
+void onCharacter(GLFWwindow* window, unsigned int codepoint) 
+{
 	TwKeyPressed(codepoint, TW_KMOD_NONE);
 
 }
@@ -267,146 +265,13 @@ void initMVP()
 
 }
 
-void buildModel(std::string path, std::vector< glm::vec3 > position, std::vector< model* >& arrayObj)
-{
-	std::vector< glm::vec3 > allVert;
-	std::vector< glm::vec3 > Vert;
-	std::vector< glm::vec3 > Normal;
-	std::vector< glm::vec3 > Tangent;
-	std::vector< glm::vec3 > Bitangent;
-	std::vector< glm::vec2 > UV;
-	//Positions
-
-	model* obj = new model(position[0]);
-	obj->loadObj(path, Vert, Normal, UV);
-	obj->getTangentBitanget(Vert, UV, Normal, Tangent, Bitangent, allVert);
-
-	//int nMod = 3;
-	//Load 3 models
-	unsigned int VAOForm[1], VBOForm[NVBOS], numVertex = Vert.size();
-	// Creates on GPU the vertex array
-	glGenVertexArrays(1, &VAOForm[0]);
-	// Creates on GPU the vertex buffer obj
-	glGenBuffers(NVBOS, VBOForm);
-	// Binds the vertex array to set all the its properties
-	glBindVertexArray(VAOForm[0]);
-
-	//vexter position VBOForm
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Vert.size(), &Vert[0], GL_STATIC_DRAW);
-	//vertex position position VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//uv VBOForm
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * UV.size(), &UV[0], GL_STATIC_DRAW);
-
-	//uv VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//normal VBOForm
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Normal.size(), &Normal[0], GL_STATIC_DRAW);
-
-	//normal object.VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//Tangent VBOForm
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[3]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Tangent.size(), &Tangent[0], GL_STATIC_DRAW);
-
-	//Tangent object.VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	//Bitangent VBOForm
-	// Sets the buffer geometry data
-	glBindBuffer(GL_ARRAY_BUFFER, VBOForm[4]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * Bitangent.size(), &Bitangent[0], GL_STATIC_DRAW);
-
-	//Bitangent object.VAO
-	// Sets the vertex attributes
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindVertexArray(0);
-
-
-	//Se encolan los modelos que tienen el mismo obj
-	model* obj1;
-	for (size_t i = 0; i < position.size(); i++)
-	{
-		model* obj1 = new model(position[i]);
-		//obj1->setPosition(pos[i]);
-		obj1->VBO[0] = VBOForm[0];
-		obj1->VBO[1] = VBOForm[1];
-		obj1->VBO[2] = VBOForm[2];
-		obj1->VBO[3] = VBOForm[3];
-		obj1->VBO[4] = VBOForm[4];
-		obj1->VAO[0] = VAOForm[0];
-		obj1->numVertex = numVertex;
-		std::cout << position[i].x << ' ' << position[i].y << position[i].z << std::endl;
-		obj1->setPosition(position[i]);
-		arrayObj.push_back(obj1);
-	}
-
-	position.clear();
-}
-
-void buildPlane()
-{
-	float vertices[] = {
-		// positions         // colors
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
-	};
-
-	glGenVertexArrays(1, &planeVAO);
-	glGenBuffers(1, &planeVBO);
-	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(planeVAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	// color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-}
-
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
  * (Builds a simple triangle)
  * */
-void buildGeometry()
+void buildVolume()
 {
-	std::vector< std::string > paths;
-	std::vector < glm::vec3 > pos;
-	//Positions
-	pos.push_back(glm::vec3(0.0f, 5.0f, 0.0f));
-	//Carga el mismo modelo en las distintas posiciones que tiene el arreglo
-	buildModel(".\\assets\\models\\Crate.obj", pos, modelsObj);
-	pos.clear();
-
-	//Load skybox
-	//buildSkyBox();
 }
 /**
  * Loads a texture into the GPU
@@ -505,59 +370,7 @@ unsigned int loadCubemap(std::vector<std::string> faces)
 
 void initTexture() {
 
-	textureID1 = loadTexture("assets/textures/bricks2.jpg");
-	textureID = loadTexture("assets/textures/wood.png");
-	//textureID1 = loadTexture("assets/textures/container2.png");
-	//textureID1 = loadTexture("assets/textures/bricks2.jpg");
-	normalMap = loadTexture("assets/textures/bricks2_normal.jpg");
-	unsigned int normalMap1 = loadTexture("assets/textures/toy_box_normal.png");
-	dispMap = loadTexture("assets/textures/bricks2_disp.jpg");
-	unsigned int dispMap1 = loadTexture("assets/textures/toy_box_disp.png");
-	blend = loadTexture("assets/textures/blending_transparent_window.png");
-	specularMap = loadTexture("assets/textures/container2_specular.png");
-
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	textures.push_back(textureID);
-	textures.push_back(textureID);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	textures.push_back(textureID1);
-	std::vector<unsigned int> normal
-	{
-		normalMap, normalMap, normalMap, normalMap,
-		normalMap1, normalMap1, normalMap, normalMap,
-		normalMap
-	};
-	std::vector<unsigned int> disp
-	{
-		dispMap, dispMap, dispMap, dispMap,
-		dispMap1, dispMap1, dispMap, dispMap,
-		dispMap
-	};
-	for (int i = 0; i < modelsObj.size(); i++)
-	{
-		modelsObj[i]->texture.diffuse = textures[i];
-		modelsObj[i]->texture.normal = normal[i];
-		modelsObj[i]->texture.disp = disp[i];
-		modelsObj[i]->texture.blend = blend;
-	}
-
-	//Load skybox
-	std::vector<std::string> faces
-	{
-		"assets/textures/skybox/right.bmp",
-		"assets/textures/skybox/left.bmp",
-		"assets/textures/skybox/top.bmp",
-		"assets/textures/skybox/bottom.bmp",
-		"assets/textures/skybox/front.bmp",
-		"assets/textures/skybox/back.bmp"
-	};
-	cubemapTexture = loadCubemap(faces);
-	//textures.push_back(cubemapTexture);
-
+	
 }
 
 void initFramebuffer() {
@@ -605,8 +418,7 @@ bool init()
 	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
 
 	// Loads all the geometry into the GPU
-	buildGeometry();
-	buildPlane();
+	buildVolume();
 
 	//Framebuffer
 	initFramebuffer();
@@ -674,20 +486,6 @@ void updateMVP(int i, glm::vec3 pos)
 
 	View = Camara->getView();
 	//Proj = glm::perspective(45.0f, (float)windowHeight / (float)windowWidth, 0.1f, 100.0f);
-}
-
-
-void renderPlane(Shader* shaderActual)
-{
-	shaderActual->use();
-	updateMVP(0, glm::vec3(0.0f, 0.0f, -1.0f));
-	shaderActual->setMat4("Model", Model);
-	shaderActual->setMat4("View", View);
-	shaderActual->setMat4("Proj", Proj);
-
-	glBindVertexArray(planeVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
 }
 
 void renderObj(Shader* shaderActual, int i, std::vector< model* > arrayObj)
@@ -780,7 +578,18 @@ void renderQuad()
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	}
+
 	shader->use();
+	//MVP ???
+	updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+	shader->setMat4("Model", Model);
+	shader->setMat4("View", View);
+	shader->setMat4("Proj", Proj);
+	//Texture
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(volumeObj->textureID);
+	glBindTexture(GL_TEXTURE_3D, volumeObj->textureID);
+	shader->setInt("volumeText", volumeObj->textureID);
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
@@ -794,21 +603,14 @@ void render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	/** Draws code goes here **/
-
-	//renderLightView();
-	//glCullFace(GL_FRONT);
-	//renderModels();
-	//glCullFace(GL_BACK);
-	renderPlane(shader);
-	//if (Interface->lightView)
-	//{
-	//	//pintar quad
+	//renderPlane(shader);
+	//	pintar quad
 	//	shaderquadDepthMap->use();
 	//	shaderquadDepthMap->setInt("depthMap", 0);
 	//	glActiveTexture(GL_TEXTURE0);
 	//	glBindTexture(GL_TEXTURE_2D, depthMap);
-		//renderQuad();
-	//}
+	renderQuad();
+	
 	
 	//Update
 	updateUserInterface();
@@ -827,7 +629,6 @@ void updateCameraSpeed()
 
 	Camara->setDeltatime(deltaTime);
 }
-
 
 /**
  * App main loop
@@ -877,13 +678,8 @@ int main(int argc, char const* argv[])
 
 	// Deletes the texture from the gpu
 	glDeleteTextures(1, &textureID);
-	glDeleteTextures(1, &textureID1);
-	glDeleteTextures(1, &normalMap);
-	glDeleteTextures(1, &specularMap);
-	glDeleteTextures(1, &dispMap);
-	glDeleteTextures(1, &blend);
-	glDeleteTextures(1, &cubemapTexture);
-
+	glDeleteTextures(1, &depthMap);
+	
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{

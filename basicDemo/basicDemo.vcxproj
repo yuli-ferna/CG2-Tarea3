@@ -136,12 +136,14 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="userInterface.cpp" />
+    <ClCompile Include="volume.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="userInterface.h" />
+    <ClInclude Include="volume.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\allLight.frag" />
