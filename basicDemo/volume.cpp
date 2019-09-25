@@ -12,18 +12,21 @@ volume::~volume()
 {
 }
 
-bool volume::LoadVolumeFromFile(const char* fileName) {
+bool volume::LoadVolumeFromFile(const char* fileName) 
+{
+
 	FILE* pFile = fopen(fileName, "rb");
 	if (NULL == pFile) {
+		
 		return false;
 	}
 	GLubyte* pVolume = new GLubyte[size];
 	fread(pVolume, sizeof(GLubyte), size, pFile);
 	fclose(pFile);
-
+	unsigned int t;
 	//load data into a 3D texture
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_3D, textureID);
+	glGenTextures(1, &t);
+	glBindTexture(GL_TEXTURE_3D, t);
 
 	// set the texture parameters
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -32,7 +35,8 @@ bool volume::LoadVolumeFromFile(const char* fileName) {
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, XDIM, YDIM, ZDIM, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, pVolume);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XDIM, YDIM, ZDIM, 0, GL_RED, GL_UNSIGNED_BYTE, pVolume);
+
 	delete[] pVolume;
 	return true;
 }

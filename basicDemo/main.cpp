@@ -1,4 +1,5 @@
-﻿#define NVBOS 5
+﻿#define _CRT_SECURE_NO_DEPRECATE
+#define NVBOS 5
 #include <glad/glad.h> // Glad has to be include before glfw
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -32,7 +33,7 @@ const char* windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow* window;
 // Shader object
-Shader* shader, * shaderAllLight;
+Shader* shader, * shaderCube;
 
 //Textures
 unsigned int textureID;
@@ -52,15 +53,17 @@ float speedMouse = Camara->getSpeedMouse();
 float currentTime, deltaTime;
 float lastTime = glfwGetTime();
 
-
 //Models
 model* object;
 std::vector< model* > modelsObj;
 
 //Volume
-const char* path = ".\assets\models\bonsai_256x256x256_uint8.raw";
-volume* volumeObj = new volume(path);
-
+const char* path = "assets/models/bonsai_256x256x256_uint8.raw";
+//volume* volumeObj = new volume(path);
+int XDIM = 256, YDIM = 256, ZDIM = 256;
+int size = XDIM * YDIM * ZDIM;
+float step = 0.0f;
+bool cubeView = true;
 //Framebuffer
 //Transformar al espacio de luz
 float near_plane, far_plane;
@@ -69,6 +72,8 @@ glm::mat4 lightView;
 glm::mat4 lightSpaceMatrix;
 unsigned int depthMapFBO;
 const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO;
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
 
@@ -116,7 +121,7 @@ void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods)
 			//Changes camera mode
 			if (!Camara->getCameraMode())
 			{
-				//cameraMode = true;
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			}
 			else {
 				//cameraMode = false;
@@ -125,7 +130,9 @@ void onKeyPress(GLFWwindow* window, int key, int scancode, int action, int mods)
 			Camara->changeCameraMode();
 			//cameraMode = !cameraMode;
 			break;
-
+		case GLFW_KEY_P:
+			cubeView = !cubeView;
+			break;
 		}
 	}
 
@@ -148,12 +155,19 @@ void onMouseMotion(GLFWwindow* window, double xpos, double ypos)
 		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * speedMouse * deltaTime;
 		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * speedMouse * deltaTime;
 		Camara->updateInputMouse(xoffset, yoffset);
-
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		/*yaw += xoffset;
 		pitch += yoffset;
 		std::cout << "main:\n" << yaw << ' ' << pitch << std::endl;*/
 	}
+	else
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+	}
+	
 }
+
 void onCharacter(GLFWwindow* window, unsigned int codepoint) 
 {
 	TwKeyPressed(codepoint, TW_KMOD_NONE);
@@ -265,6 +279,35 @@ void initMVP()
 
 }
 
+bool LoadVolumeFromFile(const char* fileName)
+{
+
+	FILE* pFile = fopen(fileName, "rb");
+	if (NULL == pFile) {
+
+		return false;
+	}
+	GLubyte* pVolume = new GLubyte[size];
+	fread(pVolume, sizeof(GLubyte), size, pFile);
+	fclose(pFile);
+	unsigned int t;
+	//load data into a 3D texture
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_3D, textureID);
+
+	// set the texture parameters
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XDIM, YDIM, ZDIM, 0, GL_RED, GL_UNSIGNED_BYTE, pVolume);
+
+	delete[] pVolume;
+	return true;
+}
+
 /**
  * Builds all the geometry buffers and
  * loads them up into the GPU
@@ -272,7 +315,11 @@ void initMVP()
  * */
 void buildVolume()
 {
+	LoadVolumeFromFile(path);
+
 }
+
+
 /**
  * Loads a texture into the GPU
  * @param{const char} path of the texture file
@@ -415,7 +462,7 @@ bool init()
 
 	// Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-	shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+	shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
 
 	// Loads all the geometry into the GPU
 	buildVolume();
@@ -453,16 +500,17 @@ void processKeyboardInput(GLFWwindow* window)
 	{
 		// Reloads the shader
 		delete shader;
-		delete shaderAllLight;
+		delete shaderCube;
 
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-		shaderAllLight = new Shader("assets/shaders/allLight.vert", "assets/shaders/allLight.frag");
+		shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
 
 	}
 
 	//Move camera
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
 		Camara->updateInputKeyboard('w');
+	
 
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		Camara->updateInputKeyboard('s');
@@ -473,6 +521,12 @@ void processKeyboardInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		Camara->updateInputKeyboard('d');
 
+	//Volume
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && step < 1.0f)
+		step += 1.0f / 256;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && step > 0.0f)
+		step -= 1.0f / 256;
+	std::cout << step << std::endl;
 }
 
 /*
@@ -556,6 +610,79 @@ void renderModels()
 {
 }
 
+void renderCube()
+{
+	if (cubeVAO == 0)
+	{
+		float cubeVertices[] = {
+			-0.5f,-0.5f,-0.5f,
+			-0.5f,-0.5f, 0.5f,
+			-0.5f, 0.5f, 0.5f,
+			0.5f, 0.5f,-0.5f,
+			-0.5f,-0.5f,-0.5f,
+			-0.5f, 0.5f,-0.5f,
+			0.5f,-0.5f, 0.5f,
+			-0.5f,-0.5f,-0.5f,
+			0.5f,-0.5f,-0.5f,
+			0.5f, 0.5f,-0.5f,
+			0.5f,-0.5f,-0.5f,
+			-0.5f,-0.5f,-0.5f,
+			-0.5f,-0.5f,-0.5f,
+			-0.5f, 0.5f, 0.5f,
+			-0.5f, 0.5f,-0.5f,
+			0.5f,-0.5f, 0.5f,
+			-0.5f,-0.5f, 0.5f,
+			-0.5f,-0.5f,-0.5f,
+			-0.5f, 0.5f, 0.5f,
+			-0.5f,-0.5f, 0.5f,
+			0.5f,-0.5f, 0.5f,
+			0.5f, 0.5f, 0.5f,
+			0.5f,-0.5f,-0.5f,
+			0.5f, 0.5f,-0.5f,
+			0.5f,-0.5f,-0.5f,
+			0.5f, 0.5f, 0.5f,
+			0.5f,-0.5f, 0.5f,
+			0.5f, 0.5f, 0.5f,
+			0.5f, 0.5f,-0.5f,
+			-0.5f, 0.5f,-0.5f,
+			0.5f, 0.5f, 0.5f,
+			-0.5f, 0.5f,-0.5f,
+			-0.5f, 0.5f, 0.5f,
+			0.5f, 0.5f, 0.5f,
+			-0.5f, 0.5f, 0.5f,
+			0.5f,-0.5f, 0.5f
+		};
+		
+		glGenVertexArrays(1, &cubeVAO);
+		glGenBuffers(1, &cubeVBO);
+		glBindVertexArray(cubeVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+		// Position
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	}
+
+	shaderCube->use();
+	//MVP ???
+	updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+	shaderCube->setMat4("Model", Model);
+	shaderCube->setMat4("View", View);
+	shaderCube->setMat4("Proj", Proj);
+	//Texture
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, textureID);
+
+	shaderCube->setFloat("step", step);
+
+	glBindVertexArray(cubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+}
+
 void renderQuad()
 {
 	if (quadVAO == 0)
@@ -577,6 +704,8 @@ void renderQuad()
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+		
 	}
 
 	shader->use();
@@ -587,9 +716,11 @@ void renderQuad()
 	shader->setMat4("Proj", Proj);
 	//Texture
 	glEnable(GL_TEXTURE_3D);
-	glActiveTexture(volumeObj->textureID);
-	glBindTexture(GL_TEXTURE_3D, volumeObj->textureID);
-	shader->setInt("volumeText", volumeObj->textureID);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, textureID);
+	
+	shader->setFloat("step", step);
+
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
@@ -605,11 +736,17 @@ void render()
 	/** Draws code goes here **/
 	//renderPlane(shader);
 	//	pintar quad
-	//	shaderquadDepthMap->use();
 	//	shaderquadDepthMap->setInt("depthMap", 0);
 	//	glActiveTexture(GL_TEXTURE0);
 	//	glBindTexture(GL_TEXTURE_2D, depthMap);
-	renderQuad();
+	if (cubeView)
+	{
+		renderCube();
+	}
+	else 
+	{
+		renderQuad();
+	}
 	
 	
 	//Update
@@ -695,7 +832,7 @@ int main(int argc, char const* argv[])
 
 	// Destroy the shader
 	delete shader;
-	delete shaderAllLight;
+	delete shaderCube;
 	//delete shaderDirLight;
 	//delete shaderPointLight;
 	delete Camara;

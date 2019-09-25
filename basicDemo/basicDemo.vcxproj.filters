@@ -73,5 +73,11 @@
     <None Include="assets\shaders\allLight.vert">
       <Filter>Archivos de recursos\Shaders</Filter>
     </None>
+    <None Include="assets\shaders\cube.frag">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\cube.vert">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
