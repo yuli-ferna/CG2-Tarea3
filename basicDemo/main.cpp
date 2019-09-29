@@ -33,7 +33,7 @@ const char* windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow* window;
 // Shader object
-Shader *shader, *shaderCube, *shaderFramebuffer;
+Shader *shader, *shaderCube, *shaderFramebuffer, * shaderRayCasting;
 
 //Textures
 unsigned int textureID;
@@ -516,6 +516,7 @@ bool init()
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 	shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
 	shaderFramebuffer = new Shader("assets/shaders/framebuffer.vert", "assets/shaders/framebuffer.frag");
+	shaderRayCasting = new Shader("assets/shaders/rayCasting.vert", "assets/shaders/rayCasting.frag");
 
 	// Loads all the geometry into the GPU
 	buildVolume();
@@ -556,10 +557,13 @@ void processKeyboardInput(GLFWwindow* window)
 		delete shader;
 		delete shaderCube;
 		delete shaderFramebuffer;
-	
+		delete shaderRayCasting;
+
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
 		shaderFramebuffer = new Shader("assets/shaders/framebuffer.vert", "assets/shaders/framebuffer.frag");
+		shaderRayCasting = new Shader("assets/shaders/rayCasting.vert", "assets/shaders/rayCasting.frag");
+
 	}
 
 	if (!cubeView)
@@ -678,39 +682,39 @@ void renderCube()
 			-0.5f,-0.5f,-0.5f,
 			-0.5f,-0.5f, 0.5f,
 			-0.5f, 0.5f, 0.5f,
-			0.5f, 0.5f,-0.5f,
+			 0.5f, 0.5f,-0.5f,
 			-0.5f,-0.5f,-0.5f,
 			-0.5f, 0.5f,-0.5f,
-			0.5f,-0.5f, 0.5f,
+			 0.5f,-0.5f, 0.5f,
 			-0.5f,-0.5f,-0.5f,
-			0.5f,-0.5f,-0.5f,
-			0.5f, 0.5f,-0.5f,
-			0.5f,-0.5f,-0.5f,
+			 0.5f,-0.5f,-0.5f,
+			 0.5f, 0.5f,-0.5f,
+			 0.5f,-0.5f,-0.5f,
 			-0.5f,-0.5f,-0.5f,
 			-0.5f,-0.5f,-0.5f,
 			-0.5f, 0.5f, 0.5f,
 			-0.5f, 0.5f,-0.5f,
-			0.5f,-0.5f, 0.5f,
+			 0.5f,-0.5f, 0.5f,
 			-0.5f,-0.5f, 0.5f,
 			-0.5f,-0.5f,-0.5f,
 			-0.5f, 0.5f, 0.5f,
 			-0.5f,-0.5f, 0.5f,
-			0.5f,-0.5f, 0.5f,
-			0.5f, 0.5f, 0.5f,
-			0.5f,-0.5f,-0.5f,
-			0.5f, 0.5f,-0.5f,
-			0.5f,-0.5f,-0.5f,
-			0.5f, 0.5f, 0.5f,
-			0.5f,-0.5f, 0.5f,
-			0.5f, 0.5f, 0.5f,
-			0.5f, 0.5f,-0.5f,
+			 0.5f,-0.5f, 0.5f,
+			 0.5f, 0.5f, 0.5f,
+			 0.5f,-0.5f,-0.5f,
+			 0.5f, 0.5f,-0.5f,
+			 0.5f,-0.5f,-0.5f,
+			 0.5f, 0.5f, 0.5f,
+			 0.5f,-0.5f, 0.5f,
+			 0.5f, 0.5f, 0.5f,
+			 0.5f, 0.5f,-0.5f,
 			-0.5f, 0.5f,-0.5f,
-			0.5f, 0.5f, 0.5f,
+			 0.5f, 0.5f, 0.5f,
 			-0.5f, 0.5f,-0.5f,
 			-0.5f, 0.5f, 0.5f,
-			0.5f, 0.5f, 0.5f,
+			 0.5f, 0.5f, 0.5f,
 			-0.5f, 0.5f, 0.5f,
-			0.5f,-0.5f, 0.5f
+			 0.5f,-0.5f, 0.5f
 		};
 
 		glGenVertexArrays(1, &cubeVAO);
@@ -785,21 +789,41 @@ void renderFramebuffer()
 	renderCube();
 	glCullFace(GL_BACK);
 
+	//Testing backface cube texture
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	shaderFramebuffer->use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
-	shaderFramebuffer->setInt("backFaceCubeTexture", 0);
-	//glBindVertexArray(quadVAO);
-	//// Renders the triangle geometry
-	//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	//glBindVertexArray(0);
-	renderQuad();
-	//// reset viewport
+	//shaderFramebuffer->use();
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
+	//shaderFramebuffer->setInt("backFaceCubeTexture", 0);
+	//renderQuad();
+	
+	// reset viewport
 	/*glViewport(0, 0, windowWidth, windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 */
+}
+
+void renderVolume()
+{
+	shaderRayCasting->use();
+	//MVP matrix
+	shaderRayCasting->setMat4("Model", Model);
+	shaderRayCasting->setMat4("View", View);
+	shaderRayCasting->setMat4("Proj", Proj);
+	//Window size
+	shaderRayCasting->setVec2("winSize", glm::vec2(windowWidth, windowHeight));
+	// Texture 3D
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, textureID);
+	shaderRayCasting->setInt("volumeText", 0);
+	// Texture 2D
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
+	shaderFramebuffer->setInt("backFaceCubeTexture", 1);
+
+	renderCube();
 }
 /**
  * Render Function
@@ -812,6 +836,8 @@ void render()
 	/** Draws code goes here **/
 
 	renderFramebuffer();
+
+	renderVolume();
 	if (cubeView)
 	{
 		//shaderCube->use();
@@ -943,6 +969,7 @@ int main(int argc, char const* argv[])
 	delete shader;
 	delete shaderCube;
 	delete shaderFramebuffer;
+	delete shaderRayCasting;
 	delete Camara;
 	delete object;
 	TwTerminate();

@@ -85,5 +85,11 @@
     <None Include="assets\shaders\framebuffer.frag">
       <Filter>Archivos de recursos\Shaders</Filter>
     </None>
+    <None Include="assets\shaders\rayCasting.frag">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
+    <None Include="assets\shaders\rayCasting.vert">
+      <Filter>Archivos de recursos\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
