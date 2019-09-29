@@ -33,14 +33,14 @@ const char* windowTitle = "Yuliana Fernandez";
 // Window pointer
 GLFWwindow* window;
 // Shader object
-Shader* shader, * shaderCube;
+Shader *shader, *shaderCube, *shaderFramebuffer;
 
 //Textures
 unsigned int textureID;
 unsigned int depthMap;
-
-//skybox
-unsigned int planeVAO, planeVBO;
+//back face culling para el cubo
+unsigned int backFaceCubeTexture;
+unsigned int depthrenderbuffer;
 
 //MVP Matrix
 glm::mat4 Model;
@@ -71,7 +71,10 @@ glm::mat4 lightProjection;
 glm::mat4 lightView;
 glm::mat4 lightSpaceMatrix;
 unsigned int depthMapFBO;
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 800, SHADOW_HEIGHT = 600;
+//Framebuffer backface culling
+unsigned int backfaceFBO;
+
 unsigned int cubeVAO = 0;
 unsigned int cubeVBO;
 unsigned int quadVAO = 0;
@@ -257,6 +260,12 @@ void initGL()
 {
 	// Enables the z-buffer test
 	glEnable(GL_DEPTH_TEST);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
+
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	//Blending
 	glEnable(GL_BLEND);
@@ -447,6 +456,49 @@ void initFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
+GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+
+void initFramebufferBackface()
+{
+
+	// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+	glGenFramebuffers(1, &backfaceFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, backfaceFBO);
+
+	// The texture we're going to render to
+	glGenTextures(1, &backFaceCubeTexture);
+
+	// "Bind" the newly created texture : all future texture functions will modify this texture
+	glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
+
+	// Give an empty image to OpenGL ( the last "0" means "empty" )
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+	// Poor filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// The depth buffer
+	glGenRenderbuffers(1, &depthrenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+
+	
+	// Set "backFaceCubeTexture" as our colour attachement #0
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, backFaceCubeTexture, 0);
+
+	//// Depth texture alternative : 
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+
+
+	// Set the list of draw buffers.
+	glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
 /**
  * Initialize everything
  * @returns{bool} true if everything goes ok
@@ -463,19 +515,21 @@ bool init()
 	// Loads the shader
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 	shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
+	shaderFramebuffer = new Shader("assets/shaders/framebuffer.vert", "assets/shaders/framebuffer.frag");
 
 	// Loads all the geometry into the GPU
 	buildVolume();
 
 	//Framebuffer
-	initFramebuffer();
+	//initFramebuffer();
+	initFramebufferBackface();
 
+	/*initCal*/
 	// Loads the texture into the GPU
 	initTexture();
 
 	//Initializate MVP values
 	initMVP();
-
 	
 	//Init values of tweakbar
 	initUserInterfaceValues();
@@ -501,32 +555,41 @@ void processKeyboardInput(GLFWwindow* window)
 		// Reloads the shader
 		delete shader;
 		delete shaderCube;
-
+		delete shaderFramebuffer;
+	
 		shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 		shaderCube = new Shader("assets/shaders/cube.vert", "assets/shaders/cube.frag");
-
+		shaderFramebuffer = new Shader("assets/shaders/framebuffer.vert", "assets/shaders/framebuffer.frag");
 	}
 
-	//Move camera
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
-		Camara->updateInputKeyboard('w');
+	if (!cubeView)
+	{
+		//Volume
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && step < 1.0f)
+			step += 1.0f / 256;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && step > 0.0f)
+			step -= 1.0f / 256;
+
+	}
+	else {
+
+		//Move camera
+
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) 
+			Camara->updateInputKeyboard('w');
+
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			Camara->updateInputKeyboard('s');
+
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			Camara->updateInputKeyboard('a');
+
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			Camara->updateInputKeyboard('d');
+	}
+
+
 	
-
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		Camara->updateInputKeyboard('s');
-
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		Camara->updateInputKeyboard('a');
-
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		Camara->updateInputKeyboard('d');
-
-	//Volume
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && step < 1.0f)
-		step += 1.0f / 256;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && step > 0.0f)
-		step -= 1.0f / 256;
-	std::cout << step << std::endl;
 }
 
 /*
@@ -606,9 +669,6 @@ void updateUserInterface()
 	//Model
 }
 
-void renderModels()
-{
-}
 
 void renderCube()
 {
@@ -652,7 +712,7 @@ void renderCube()
 			-0.5f, 0.5f, 0.5f,
 			0.5f,-0.5f, 0.5f
 		};
-		
+
 		glGenVertexArrays(1, &cubeVAO);
 		glGenBuffers(1, &cubeVBO);
 		glBindVertexArray(cubeVAO);
@@ -664,18 +724,6 @@ void renderCube()
 
 	}
 
-	shaderCube->use();
-	//MVP ???
-	updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
-	shaderCube->setMat4("Model", Model);
-	shaderCube->setMat4("View", View);
-	shaderCube->setMat4("Proj", Proj);
-	//Texture
-	glEnable(GL_TEXTURE_3D);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, textureID);
-
-	shaderCube->setFloat("step", step);
 
 	glBindVertexArray(cubeVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -704,26 +752,54 @@ void renderQuad()
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
-		
 	}
 
-	shader->use();
-	//MVP ???
-	updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
-	shader->setMat4("Model", Model);
-	shader->setMat4("View", View);
-	shader->setMat4("Proj", Proj);
-	//Texture
-	glEnable(GL_TEXTURE_3D);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, textureID);
-	
-	shader->setFloat("step", step);
 
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
+}
+
+void renderFramebuffer() 
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, backfaceFBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glViewport(0, 0, windowWidth, windowHeight);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+
+	shaderCube->use();
+	//MVP ???
+	updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+	shaderCube->setMat4("Model", Model);
+	shaderCube->setMat4("View", View);
+	shaderCube->setMat4("Proj", Proj);
+	//Texture
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, textureID);
+
+	shaderCube->setFloat("step", step);
+
+	renderCube();
+	glCullFace(GL_BACK);
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	shaderFramebuffer->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
+	shaderFramebuffer->setInt("backFaceCubeTexture", 0);
+	//glBindVertexArray(quadVAO);
+	//// Renders the triangle geometry
+	//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	//glBindVertexArray(0);
+	renderQuad();
+	//// reset viewport
+	/*glViewport(0, 0, windowWidth, windowHeight);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+*/
 }
 /**
  * Render Function
@@ -734,18 +810,43 @@ void render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	/** Draws code goes here **/
-	//renderPlane(shader);
-	//	pintar quad
-	//	shaderquadDepthMap->setInt("depthMap", 0);
-	//	glActiveTexture(GL_TEXTURE0);
-	//	glBindTexture(GL_TEXTURE_2D, depthMap);
+
+	renderFramebuffer();
 	if (cubeView)
 	{
-		renderCube();
+		//shaderCube->use();
+		////MVP ???
+		//updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+		//shaderCube->setMat4("Model", Model);
+		//shaderCube->setMat4("View", View);
+		//shaderCube->setMat4("Proj", Proj);
+		////Texture
+		//glEnable(GL_TEXTURE_3D);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_3D, textureID);
+
+		//shaderCube->setFloat("step", step);
+
+		//renderCube();
+		
 	}
 	else 
 	{
-		renderQuad();
+		//shader->use();
+		////MVP ???
+		//updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+		//shader->setMat4("Model", Model);
+		//shader->setMat4("View", View);
+		//shader->setMat4("Proj", Proj);
+		////Texture
+		//glEnable(GL_TEXTURE_3D);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_3D, textureID);
+
+		//shader->setFloat("step", step);
+
+		//renderQuad();
+		//
 	}
 	
 	
@@ -783,7 +884,6 @@ void update()
 		// Renders everything
 		render();
 
-
 		// Check and call events
 		glfwPollEvents();
 	}
@@ -816,7 +916,16 @@ int main(int argc, char const* argv[])
 	// Deletes the texture from the gpu
 	glDeleteTextures(1, &textureID);
 	glDeleteTextures(1, &depthMap);
+	glDeleteTextures(1, &backFaceCubeTexture);
 	
+	
+	glDeleteFramebuffers(1, &depthMapFBO);
+	glDeleteFramebuffers(1, &backfaceFBO);
+	glDeleteRenderbuffers(1, &depthrenderbuffer);
+	glDeleteBuffers(1, &cubeVAO);
+	glDeleteBuffers(1, &quadVAO);
+	glDeleteBuffers(1, &cubeVBO);
+	glDeleteBuffers(1, &quadVBO);
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{
@@ -833,8 +942,7 @@ int main(int argc, char const* argv[])
 	// Destroy the shader
 	delete shader;
 	delete shaderCube;
-	//delete shaderDirLight;
-	//delete shaderPointLight;
+	delete shaderFramebuffer;
 	delete Camara;
 	delete object;
 	TwTerminate();
