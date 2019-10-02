@@ -15,6 +15,6 @@ void main()
 {
     gl_Position = Proj * View * Model * vec4(aPos, 1.0);
  //   ourColor = vec3(aCoordText, 1.0f);
-	ourColor = aPos;
+	ourColor = aPos + 0.5f;
 	//textCoord = aCoordText;
 }

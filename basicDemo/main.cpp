@@ -267,9 +267,9 @@ void initGL()
 	glEnable(GL_CULL_FACE);
 
 	glEnable(GL_FRAMEBUFFER_SRGB);
-	//Blending
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	////Blending
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// Sets the ViewPort
 	glViewport(0, 0, windowWidth, windowHeight);
 	// Sets the clear color
@@ -317,7 +317,7 @@ bool LoadVolumeFromFile(const char* fileName)
 	return true;
 }
 
-/**
+/* *
  * Builds all the geometry buffers and
  * loads them up into the GPU
  * (Builds a simple triangle)
@@ -391,38 +391,6 @@ unsigned int loadTexture(const char* path)
 	return id;
 }
 
-unsigned int loadCubemap(std::vector<std::string> faces)
-{
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(false);
-	for (unsigned int i = 0; i < faces.size(); i++)
-	{
-		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
-			);
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-			stbi_image_free(data);
-		}
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	return textureID;
-}
 
 void initTexture() {
 
@@ -678,7 +646,7 @@ void renderCube()
 {
 	if (cubeVAO == 0)
 	{
-		float cubeVertices[] = {
+		float cubeVertex[] = {
 			-0.5f,-0.5f,-0.5f,
 			-0.5f,-0.5f, 0.5f,
 			-0.5f, 0.5f, 0.5f,
@@ -721,7 +689,7 @@ void renderCube()
 		glGenBuffers(1, &cubeVBO);
 		glBindVertexArray(cubeVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertex), &cubeVertex, GL_STATIC_DRAW);
 		// Position
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -757,7 +725,6 @@ void renderQuad()
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	}
-
 
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -806,7 +773,11 @@ void renderFramebuffer()
 
 void renderVolume()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, windowWidth, windowHeight);
+
 	shaderRayCasting->use();
+	updateMVP(0, glm::vec3(0.0f));
 	//MVP matrix
 	shaderRayCasting->setMat4("Model", Model);
 	shaderRayCasting->setMat4("View", View);
@@ -822,7 +793,6 @@ void renderVolume()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, backFaceCubeTexture);
 	shaderFramebuffer->setInt("backFaceCubeTexture", 1);
-
 	renderCube();
 }
 /**
@@ -836,48 +806,33 @@ void render()
 	/** Draws code goes here **/
 
 	renderFramebuffer();
+	glViewport(0, 0, windowWidth, windowHeight*0.8f);
 
-	renderVolume();
 	if (cubeView)
 	{
-		//shaderCube->use();
-		////MVP ???
-		//updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
-		//shaderCube->setMat4("Model", Model);
-		//shaderCube->setMat4("View", View);
-		//shaderCube->setMat4("Proj", Proj);
-		////Texture
-		//glEnable(GL_TEXTURE_3D);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_3D, textureID);
-
-		//shaderCube->setFloat("step", step);
-
-		//renderCube();
-		
+		renderVolume();		
 	}
 	else 
 	{
-		//shader->use();
-		////MVP ???
-		//updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
-		//shader->setMat4("Model", Model);
-		//shader->setMat4("View", View);
-		//shader->setMat4("Proj", Proj);
-		////Texture
-		//glEnable(GL_TEXTURE_3D);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_3D, textureID);
+		shader->use();
+		//MVP ???
+		updateMVP(0, glm::vec3(0.0f, 0.0f, 0.0f));
+		shader->setMat4("Model", Model);
+		shader->setMat4("View", View);
+		shader->setMat4("Proj", Proj);
+		//Texture
+		glEnable(GL_TEXTURE_3D);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D, textureID);
 
-		//shader->setFloat("step", step);
+		shader->setFloat("step", step);
 
-		//renderQuad();
-		//
+		renderQuad();
 	}
 	
-	
 	//Update
-	updateUserInterface();
+	//updateUserInterface();
+	glViewport(0, 0, windowWidth, windowHeight);
 
 	// Swap the buffer
 	glfwSwapBuffers(window);
@@ -909,6 +864,7 @@ void update()
 
 		// Renders everything
 		render();
+		
 
 		// Check and call events
 		glfwPollEvents();
