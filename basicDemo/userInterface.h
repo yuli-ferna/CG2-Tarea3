@@ -13,6 +13,7 @@ public:
 	void reshape();
 	void show();
 	void hide();
+	glm::vec4 color;
 	glm::vec3 getLightDir();
 	void setLightDir(glm::vec3 lightD);
 	glm::vec3 floatpointToVec3(float* arr);

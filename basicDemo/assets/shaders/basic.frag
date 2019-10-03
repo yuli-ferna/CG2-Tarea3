@@ -13,4 +13,8 @@ void main()
 	vec3 text = vec3(textCoord.x, textCoord.y, step);
     FragColor = vec4(1.0f);
 	FragColor = vec4(vec3(texture(volumeText,text).r), 1.0f);
+//	if(texture(volumeText,text).r >= 0.5f)
+//	{
+//		FragColor=vec4(0.0f, texture(volumeText,text).r,texture(volumeText,text).r,1.0f);
+//	}
 }

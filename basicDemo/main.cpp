@@ -17,13 +17,14 @@
 #include "userInterface.h"
 #include "model.h"
 #include "camera.h"
-#include "volume.h"
 
 #include "Shader.h"
 #include <vector>
 #include <map>
+#include <set>
 
 #define px(x) x  
+using namespace std;
 // Window current width
 unsigned int windowWidth = 800;
 // Window current height
@@ -34,6 +35,8 @@ const char* windowTitle = "Yuliana Fernandez";
 GLFWwindow* window;
 // Shader object
 Shader *shader, *shaderCube, *shaderFramebuffer, * shaderRayCasting;
+//tweakBar
+userInterface* Interface;
 
 //Textures
 unsigned int textureID;
@@ -61,7 +64,7 @@ std::vector< model* > modelsObj;
 const char* path = "assets/models/bonsai_256x256x256_uint8.raw";
 //volume* volumeObj = new volume(path);
 int XDIM = 256, YDIM = 256, ZDIM = 256;
-int size = XDIM * YDIM * ZDIM;
+int sizeV = XDIM * YDIM * ZDIM;
 float step = 0.0f;
 bool cubeView = true;
 //Framebuffer
@@ -79,7 +82,12 @@ unsigned int cubeVAO = 0;
 unsigned int cubeVBO;
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
-
+//Funcion de transferencia
+unsigned int quadFTVAO = 0;
+unsigned int quadFTVBO;
+vector< glm::vec4 > colores;
+set< int > points;
+unsigned int funcTransferColor;
 /* *
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -179,8 +187,18 @@ void onCharacter(GLFWwindow* window, unsigned int codepoint)
 
 void initUserInterfaceValues()
 {
-	//Model
-	
+
+	for (int i = 0; i < 255; i++)
+	{
+		colores.push_back(glm::vec4(glm::vec3(static_cast<float> (i) / 255.0f), 1.0f));
+	}
+	glGenTextures(1, &funcTransferColor);
+
+	glBindTexture(GL_TEXTURE_1D, funcTransferColor);
+
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 /**
  * initialize the user interface
@@ -191,7 +209,7 @@ bool initUserInterface()
 	if (!TwInit(TW_OPENGL_CORE, NULL))
 		return false;
 
-	//Interface = new userInterface();
+	Interface = new userInterface();
 	TwWindowSize(windowHeight, windowHeight);
 	//initUserInterfaceValues();
 	return true;
@@ -273,7 +291,7 @@ void initGL()
 	// Sets the ViewPort
 	glViewport(0, 0, windowWidth, windowHeight);
 	// Sets the clear color
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 /*
@@ -296,8 +314,8 @@ bool LoadVolumeFromFile(const char* fileName)
 
 		return false;
 	}
-	GLubyte* pVolume = new GLubyte[size];
-	fread(pVolume, sizeof(GLubyte), size, pFile);
+	GLubyte* pVolume = new GLubyte[sizeV];
+	fread(pVolume, sizeof(GLubyte), sizeV, pFile);
 	fclose(pFile);
 	unsigned int t;
 	//load data into a 3D texture
@@ -731,6 +749,33 @@ void renderQuad()
 	glBindVertexArray(0);
 }
 
+void renderQuadFT()
+{
+	if (quadFTVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadFTVAO);
+		glGenBuffers(1, &quadFTVBO);
+		glBindVertexArray(quadFTVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadFTVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+
+	glBindVertexArray(quadFTVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+}
 void renderFramebuffer() 
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, backfaceFBO);
@@ -806,7 +851,6 @@ void render()
 	/** Draws code goes here **/
 
 	renderFramebuffer();
-	glViewport(0, 0, windowWidth, windowHeight*0.8f);
 
 	if (cubeView)
 	{
@@ -831,8 +875,10 @@ void render()
 	}
 	
 	//Update
-	//updateUserInterface();
-	glViewport(0, 0, windowWidth, windowHeight);
+	updateUserInterface();
+	//glViewport(0, 0, windowWidth, windowHeight);
+	//tweakbar
+	TwDraw();
 
 	// Swap the buffer
 	glfwSwapBuffers(window);
@@ -870,6 +916,22 @@ void update()
 		glfwPollEvents();
 	}
 }
+void interpolation(glm::vec4 colorPoint, float nPoint)
+{
+	points.insert(nPoint);
+	colores[nPoint] = colorPoint;
+	for (size_t i = 0; i < colores.size(); i++)
+	{
+
+	}
+}
+
+void funcTransfer() 
+{
+	//color
+	std::cout << Interface->color.x;
+	interpolation(Interface->color, Interface->shinniness);
+}
 
 
 /**
@@ -906,8 +968,10 @@ int main(int argc, char const* argv[])
 	glDeleteRenderbuffers(1, &depthrenderbuffer);
 	glDeleteBuffers(1, &cubeVAO);
 	glDeleteBuffers(1, &quadVAO);
+	glDeleteBuffers(1, &quadFTVAO);
 	glDeleteBuffers(1, &cubeVBO);
 	glDeleteBuffers(1, &quadVBO);
+	glDeleteBuffers(1, &quadFTVBO);
 
 	for (size_t i = 0; i < modelsObj.size(); i++)
 	{

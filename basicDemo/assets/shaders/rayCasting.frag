@@ -30,4 +30,10 @@ void main()
 	}
 	fragEnd.a = 1.0f;
 	FragColor = fragEnd;
+//	if(1 - fragEnd.g >= 0.99f)
+//		FragColor = vec4(fragEnd.r, fragEnd.r, 0.0f, 1.0f);
+//	if(fragEnd.g <= 0.5f)
+//	{
+//		FragColor=vec4(0.0f, fragEnd.g,fragEnd.g,1.0f);
+//	}
 }  
